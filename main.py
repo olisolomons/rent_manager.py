@@ -1,6 +1,6 @@
 
 def main():
-    print('Hi there, hello')
+    print('This needs a new release, I decided')
 
 
 if __name__ == '__main__':

@@ -53,8 +53,6 @@ jobs:
             DO_PYTHON_SETUP: true
     steps:
       - uses: actions/checkout@v1
-      - name: ${{matrix.EXTRA_USES_NAME}}
-        uses: ${{matrix.EXTRA_USES}}
       - name: Set up homebrew
         if: ! ${{matrx.DO_PYTHON_SETUP}}
         uses: Homebrew/actions/setup-homebrew@master

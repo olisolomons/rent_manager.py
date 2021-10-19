@@ -59,7 +59,7 @@ jobs:
       - name: Homebrew install python
         if: ${{!matrix.DO_PYTHON_SETUP}}
         run: >
-          brew install python-tk@3.9
+          brew install python-tk@3.9 &&
           alias python=python3
       - name: Set up Python 3.9
         if: ${{matrix.DO_PYTHON_SETUP}}

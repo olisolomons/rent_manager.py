@@ -41,37 +41,29 @@ jobs:
             CMD_BUILD: >
               pyinstaller -F -w -n rent_manager main.py &&
               cd dist/ &&
+              mkdir rent_manager.app/Contents/MacOs/tcl &&
+              mkdir rent_manager.app/Contents/MacOs/tk &&
+              cp -R /Library/Frameworks/Python.framework/Versions/3.9/lib/tcl* rent_manager.app/Contents/MacOs/tcl/ &&
+              cp -R /Library/Frameworks/Python.framework/Versions/3.9/lib/tk* rent_manager.app/Contents/MacOs/tk/ &&
+              cp -R /Library/Frameworks/Python.framework/Versions/3.9/lib/Tk* rent_manager.app/Contents/MacOs/tk/ &&
               zip -r9 rent_manager rent_manager.app/
             OUT_FILE_NAME: rent_manager.zip
             ASSET_MIME: application/zip
-            DO_PYTHON_SETUP: false
-            PYTHON_EXE: /usr/local/bin/python3
           - os: windows-latest
             TARGET: windows
             CMD_BUILD: pyinstaller -F -w -n rent_manager main.py
             OUT_FILE_NAME: rent_manager.exe
             ASSET_MIME: application/vnd.microsoft.portable-executable
-            DO_PYTHON_SETUP: true
-            PYTHON_EXE: python
     steps:
       - uses: actions/checkout@v1
-      - name: Set up homebrew
-        if: ${{!matrix.DO_PYTHON_SETUP}}
-        uses: Homebrew/actions/setup-homebrew@master
-      - name: Homebrew install python
-        if: ${{!matrix.DO_PYTHON_SETUP}}
-        run: >
-          brew install python-tk@3.9 &&
-          alias python=python3
       - name: Set up Python 3.9
-        if: ${{matrix.DO_PYTHON_SETUP}}
         uses: actions/setup-python@v2
         with:
           python-version: 3.9
       - name: Install dependencies
         run: |
-          ${{matrix.PYTHON_EXE}} -m pip install --upgrade pip
-          ${{matrix.PYTHON_EXE}} -m pip install -r requirements.txt
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
       - name: Build with pyinstaller for ${{matrix.TARGET}}
         run: ${{matrix.CMD_BUILD}}
       - name: Load Release URL File from release job

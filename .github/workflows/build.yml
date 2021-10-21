@@ -41,11 +41,6 @@ jobs:
             CMD_BUILD: >
               pyinstaller -F -w -n rent_manager main.py &&
               cd dist/ &&
-              mkdir rent_manager.app/Contents/MacOs/tcl &&
-              mkdir rent_manager.app/Contents/MacOs/tk &&
-              cp -R /Library/Frameworks/Python.framework/Versions/3.9/lib/tcl* rent_manager.app/Contents/MacOs/tcl/ &&
-              cp -R /Library/Frameworks/Python.framework/Versions/3.9/lib/tk* rent_manager.app/Contents/MacOs/tk/ &&
-              cp -R /Library/Frameworks/Python.framework/Versions/3.9/lib/Tk* rent_manager.app/Contents/MacOs/tk/ &&
               zip -r9 rent_manager rent_manager.app/
             OUT_FILE_NAME: rent_manager.zip
             ASSET_MIME: application/zip

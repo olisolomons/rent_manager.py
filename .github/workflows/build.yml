@@ -74,6 +74,7 @@ jobs:
           install: >
             mingw-w64-x86_64-gtk3
             mingw-w64-x86_64-python3
+            mingw-w64-x86_64-python3-cairo
             mingw-w64-x86_64-python3-gobject
             mingw-w64-x86_64-python3-pip
       - name: Install python and pygobject

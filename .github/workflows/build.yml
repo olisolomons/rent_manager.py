@@ -71,16 +71,16 @@ jobs:
         with:
           msystem: MINGW64
           update: true
-          install: mingw-w64-x86_64-gtk3 mingw-w64-x86_64-python3 mingw-w64-x86_64-python3-gobject
+          install: >
+            mingw-w64-x86_64-gtk3
+            mingw-w64-x86_64-python3
+            mingw-w64-x86_64-python3-gobject
+            mingw-w64-python-pip
       - name: Install python and pygobject
         run: ${{matrix.EXTRA_SETUP}}
-      - name: Set up Python 3.9
-        if: ${{matrix.IS_WINDOWS}}
-        uses: actions/setup-python@v2
-        with:
-          python-version: 3.9
       - name: Install dependencies
         run: |
+          ${{matrix.PYTHON_EXE}} --version
           ${{matrix.PYTHON_EXE}} -m pip install --upgrade pip
           ${{matrix.PYTHON_EXE}} -m pip install -r requirements.txt
       - name: Build with pyinstaller for ${{matrix.TARGET}}

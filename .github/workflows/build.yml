@@ -47,7 +47,7 @@ jobs:
               zip -r9 rent_manager rent_manager.app/
             OUT_FILE_NAME: rent_manager.zip
             ASSET_MIME: application/zip
-            DO_PYTHON_SETUP: false
+            IS_WINDOWS: false
             PYTHON_EXE: /usr/local/bin/python3
             EXTRA_SETUP: brew install python@3.9 pygobject3 gtk+4
             SHELL: bash
@@ -56,21 +56,26 @@ jobs:
             CMD_BUILD: pyinstaller -F -w -n rent_manager main.py
             OUT_FILE_NAME: rent_manager.exe
             ASSET_MIME: application/vnd.microsoft.portable-executable
-            DO_PYTHON_SETUP: true
+            IS_WINDOWS: true
             PYTHON_EXE: python
-            EXTRA_SETUP: >
-              pacman -Suy &&
-              pacman -S mingw-w64-x86_64-gtk3 mingw-w64-x86_64-python3 mingw-w64-x86_64-python3-gobject
+            EXTRA_SETUP: ''
             SHELL: msys2 {0}
     steps:
       - uses: actions/checkout@v1
       - name: Set up homebrew
-        if: ${{!matrix.DO_PYTHON_SETUP}}
+        if: ${{!matrix.IS_WINDOWS}}
         uses: Homebrew/actions/setup-homebrew@master
+      - name: Set up msys2
+        if: ${{matrix.IS_WINDOWS}}
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          update: true
+          install: mingw-w64-x86_64-gtk3 mingw-w64-x86_64-python3 mingw-w64-x86_64-python3-gobject
       - name: Install python and pygobject
         run: ${{matrix.EXTRA_SETUP}}
       - name: Set up Python 3.9
-        if: ${{matrix.DO_PYTHON_SETUP}}
+        if: ${{matrix.IS_WINDOWS}}
         uses: actions/setup-python@v2
         with:
           python-version: 3.9

@@ -42,7 +42,7 @@ jobs:
           - os: macos-latest
             TARGET: macos
             CMD_BUILD: >
-              ${{matrix.PYTHON_EXE}} -m pyinstaller -F -w -n rent_manager main.py &&
+              /usr/local/bin/python3 -m pyinstaller -F -w -n rent_manager main.py &&
               cd dist/ &&
               zip -r9 rent_manager rent_manager.app/
             OUT_FILE_NAME: rent_manager.zip

@@ -42,6 +42,7 @@ jobs:
           - os: macos-latest
             TARGET: macos
             CMD_BUILD: >
+              /usr/local/bin/python3 -v -c "import tkinter" &&
               /usr/local/bin/python3 -m pyinstaller -F -w -n rent_manager main.py &&
               cd dist/ &&
               zip -r9 rent_manager rent_manager.app/
@@ -49,7 +50,7 @@ jobs:
             ASSET_MIME: application/zip
             IS_WINDOWS: false
             PYTHON_EXE: /usr/local/bin/python3
-            EXTRA_SETUP: brew install python@3.9 pygobject3 gtk+3
+            EXTRA_SETUP: brew install python@3.9 python-tk@3.9 pygobject3 gtk+3
             SHELL: bash
           - os: windows-latest
             TARGET: windows

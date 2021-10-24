@@ -49,7 +49,7 @@ jobs:
             ASSET_MIME: application/zip
             IS_WINDOWS: false
             PYTHON_EXE: /usr/local/bin/python3
-            EXTRA_SETUP: brew install python@3.9 pygobject3 gtk+4
+            EXTRA_SETUP: brew install python@3.9 pygobject3 gtk+3
             SHELL: bash
           - os: windows-latest
             TARGET: windows

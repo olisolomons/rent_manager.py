@@ -64,7 +64,8 @@ jobs:
           brew install pyenv &&
           eval "$(pyenv init -)" &&
           env MACOSX_DEPLOYMENT_TARGET="10.8" pyenv install 3.9.7 &&
-          pyenv global 3.9.7
+          pyenv global 3.9.7 &&
+          python --version
       - name: Set up Python 3.9
         if: ${{!matrix.OVERRIDE_PYTHON}}
         uses: actions/setup-python@v2
@@ -72,6 +73,8 @@ jobs:
           python-version: 3.9
       - name: Install dependencies
         run: |
+          eval "$(pyenv init -)"
+          python --version
           python -m pip install --upgrade pip
           pip install -r requirements.txt
       - name: Build with pyinstaller for ${{matrix.TARGET}}

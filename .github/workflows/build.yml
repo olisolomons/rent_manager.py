@@ -39,20 +39,22 @@ jobs:
           - os: macos-latest
             TARGET: macos
             CMD_BUILD: >
-              python -c "print(f'Python is working and {2+2=}')" &&
-              python -v -c "import tkinter" &&
-              pyinstaller -F -n rent_manager main.py &&
+              $(pyenv root)/versions/3.9.7/bin/python -c "print(f'Python is working and {2+2=}')" &&
+              $(pyenv root)/versions/3.9.7/bin/python -v -c "import tkinter" &&
+              $(pyenv root)/versions/3.9.7/bin/python -m PyInstaller -F -n rent_manager main.py &&
               cd dist/ &&
               ./rent_manager
             OUT_FILE_NAME: rent_manager
             ASSET_MIME: application/zip
             OVERRIDE_PYTHON: true
+            PYTHON: $(pyenv root)/versions/3.9.7/bin/python
           - os: windows-latest
             TARGET: windows
             CMD_BUILD: pyinstaller -F -w -n rent_manager main.py
             OUT_FILE_NAME: rent_manager.exe
             ASSET_MIME: application/vnd.microsoft.portable-executable
             OVERRIDE_PYTHON: false
+            PYTHON: python
     steps:
       - uses: actions/checkout@v1
       - name: Set up homebrew
@@ -72,18 +74,10 @@ jobs:
         with:
           python-version: 3.9
       - name: Install dependencies
-        if: ${{matrix.OVERRIDE_PYTHON}}
         run: |
-          eval "$(pyenv init -)"
-          python --version
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-      - name: Install dependencies
-        if: ${{!matrix.OVERRIDE_PYTHON}}
-        run: |
-          python --version
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          ${{matrix.PYTHON}} --version
+          ${{matrix.PYTHON}} -m pip install --upgrade pip
+          ${{matrix.PYTHON}} -m pip install -r requirements.txt
       - name: Build with pyinstaller for ${{matrix.TARGET}}
         run: ${{matrix.CMD_BUILD}}
       - name: Load Release URL File from release job

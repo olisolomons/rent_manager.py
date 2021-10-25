@@ -65,8 +65,10 @@ jobs:
         run: >
           brew install pyenv &&
           eval "$(pyenv init -)" &&
+          echo ls { &&
           ls /Applications/Xcode_10.3.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/ &&
-          env SDKROOT=/Applications/Xcode_10.3.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.3.sdk MACOSX_DEPLOYMENT_TARGET="10.3" PYTHON_CONFIGURE_OPTS="--enable-framework" pyenv install 3.9.7 &&
+          echo } &&
+          env SDKROOT=/Applications/Xcode_10.3.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk MACOSX_DEPLOYMENT_TARGET="10.3" PYTHON_CONFIGURE_OPTS="--enable-framework" pyenv install 3.9.7 &&
           pyenv global 3.9.7 &&
           ${{matrix.PYTHON}} --version
       - name: Set up Python 3.9

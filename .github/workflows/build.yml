@@ -42,7 +42,7 @@ jobs:
               python -v -c "import tkinter" &&
               pyinstaller -F -n rent_manager main.py &&
               cd dist/ &&
-              ls &&
+              mv rent_manager rent_manager.app &&
               zip -r9 rent_manager rent_manager.app/
             OUT_FILE_NAME: rent_manager.zip
             ASSET_MIME: application/zip

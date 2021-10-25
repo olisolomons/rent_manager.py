@@ -41,7 +41,8 @@ jobs:
             CMD_BUILD: >
               python -v -c "import tkinter" &&
               pyinstaller -F -n rent_manager main.py &&
-              cd dist/
+              cd dist/ &&
+              ./rent_manager
             OUT_FILE_NAME: rent_manager
             ASSET_MIME: application/zip
           - os: windows-latest

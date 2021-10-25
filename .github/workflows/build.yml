@@ -65,10 +65,7 @@ jobs:
         run: >
           brew install pyenv &&
           eval "$(pyenv init -)" &&
-          env
-            MACOSX_DEPLOYMENT_TARGET="10.8"
-            PYTHON_CONFIGURE_OPTS="--enable-framework"
-              pyenv install 3.9.7 &&
+          env MACOSX_DEPLOYMENT_TARGET="10.8" PYTHON_CONFIGURE_OPTS="--enable-framework" pyenv install 3.9.7 &&
           pyenv global 3.9.7 &&
           ${{matrix.PYTHON}} --version
       - name: Set up Python 3.9

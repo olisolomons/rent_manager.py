@@ -62,7 +62,7 @@ jobs:
         if: ${{matrix.OVERRIDE_PYTHON}}
         run: >
           brew install pyenv &&
-          echo 'eval "$(pyenv init -)"' &&
+          eval "$(pyenv init -)" &&
           env MACOSX_DEPLOYMENT_TARGET="10.8" pyenv install 3.9.7 &&
           pyenv global 3.9.7
       - name: Set up Python 3.9

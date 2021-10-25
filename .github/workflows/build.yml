@@ -39,20 +39,32 @@ jobs:
           - os: macos-latest
             TARGET: macos
             CMD_BUILD: >
+              python -c "print(f'Python is working and {2+2=}')" &&
               python -v -c "import tkinter" &&
               pyinstaller -F -n rent_manager main.py &&
               cd dist/ &&
               ./rent_manager
             OUT_FILE_NAME: rent_manager
             ASSET_MIME: application/zip
+            OVERRIDE_PYTHON: true
           - os: windows-latest
             TARGET: windows
             CMD_BUILD: pyinstaller -F -w -n rent_manager main.py
             OUT_FILE_NAME: rent_manager.exe
             ASSET_MIME: application/vnd.microsoft.portable-executable
+            OVERRIDE_PYTHON: false
     steps:
       - uses: actions/checkout@v1
+      - name: Set up homebrew
+        if: ${{matrix.OVERRIDE_PYTHON}}
+        uses: Homebrew/actions/setup-homebrew@master
+      - name: Homebrew install python
+        if: ${{matrix.OVERRIDE_PYTHON}}
+        run: >
+          brew install pyenv &&
+          env MACOSX_DEPLOYMENT_TARGET="10.8" pyenv install 3.9.7 &&
       - name: Set up Python 3.9
+        if: ${{!matrix.OVERRIDE_PYTHON}}
         uses: actions/setup-python@v2
         with:
           python-version: 3.9

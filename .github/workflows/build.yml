@@ -40,12 +40,8 @@ jobs:
             TARGET: macos
             CMD_BUILD: >
               python -v -c "import tkinter" &&
-              pyinstaller -F -w -n rent_manager main.py &&
+              pyinstaller -F -n rent_manager main.py &&
               cd dist/ &&
-              mkdir rent_manager.app/Contents/MacOs/tcl &&
-              mkdir rent_manager.app/Contents/MacOs/tk &&
-              cp -R /Users/runner/hostedtoolcache/Python/3.9.7/x64/lib/python3.9/tkinter rent_manager.app/Contents/MacOs/ &&
-              cp -R /Users/runner/hostedtoolcache/Python/3.9.7/x64/lib/python3.9/lib-dynload/_tkinter.cpython-39-darwin.so rent_manager.app/Contents/MacOs/ &&
               zip -r9 rent_manager rent_manager.app/
             OUT_FILE_NAME: rent_manager.zip
             ASSET_MIME: application/zip

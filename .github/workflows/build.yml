@@ -72,8 +72,15 @@ jobs:
         with:
           python-version: 3.9
       - name: Install dependencies
+        if: ${{matrix.OVERRIDE_PYTHON}}
         run: |
           eval "$(pyenv init -)"
+          python --version
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Install dependencies
+        if: ${{!matrix.OVERRIDE_PYTHON}}
+        run: |
           python --version
           python -m pip install --upgrade pip
           pip install -r requirements.txt

@@ -39,12 +39,11 @@ jobs:
           - os: macos-latest
             TARGET: macos
             CMD_BUILD: >
-              $(pyenv root)/versions/3.9.7/bin/python -c "print(f'Python is working and {2+2=}')" &&
               $(pyenv root)/versions/3.9.7/bin/python -v -c "import tkinter" &&
-              $(pyenv root)/versions/3.9.7/bin/python -m PyInstaller -F -n rent_manager main.py &&
+              $(pyenv root)/versions/3.9.7/bin/python -m PyInstaller -F -w -n rent_manager main.py &&
               cd dist/ &&
-              ./rent_manager
-            OUT_FILE_NAME: rent_manager
+              zip -r9 rent_manager rent_manager.app/
+            OUT_FILE_NAME: rent_manager.zip
             ASSET_MIME: application/zip
             OVERRIDE_PYTHON: true
             PYTHON: $(pyenv root)/versions/3.9.7/bin/python

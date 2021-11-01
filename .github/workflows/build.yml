@@ -39,7 +39,6 @@ jobs:
           - os: macos-latest
             TARGET: macos
             CMD_BUILD: >
-              $(pyenv root)/versions/3.9.7/bin/python -v -c "import tkinter" &&
               $(pyenv root)/versions/3.9.7/bin/python -m PyInstaller -F -w -n rent_manager main.py &&
               cd dist/ &&
               zip -r9 rent_manager rent_manager.app/
@@ -64,12 +63,8 @@ jobs:
         run: >
           brew install pyenv &&
           eval "$(pyenv init -)" &&
-          echo ls { &&
-          ls /Applications/Xcode_10.3.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/ &&
-          echo } &&
           env SDKROOT=/Applications/Xcode_10.3.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk MACOSX_DEPLOYMENT_TARGET="10.3" PYTHON_CONFIGURE_OPTS="--enable-framework" pyenv install 3.9.7 &&
-          pyenv global 3.9.7 &&
-          ${{matrix.PYTHON}} --version
+          pyenv global 3.9.7
       - name: Set up Python 3.9
         if: ${{!matrix.OVERRIDE_PYTHON}}
         uses: actions/setup-python@v2
@@ -77,7 +72,6 @@ jobs:
           python-version: 3.9
       - name: Install dependencies
         run: |
-          ${{matrix.PYTHON}} --version
           ${{matrix.PYTHON}} -m pip install --upgrade pip
           ${{matrix.PYTHON}} -m pip install -r requirements.txt
       - name: Build with pyinstaller for ${{matrix.TARGET}}

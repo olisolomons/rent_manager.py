@@ -5,20 +5,24 @@ from typing import Generic, TypeVar, Callable, Optional
 
 from tk_utils import WidgetList
 from datetime import date
-from traits.core import HasTraits
+from traits.core import ViewableRecord
 from traits.views import CurrencyView
 
 
 @dataclass
-class RentPayment(HasTraits):
-    received_on: date
+class RentPayment(ViewableRecord):
     amount: int
+    amount2: int
+
+    # received_on: date
 
     @staticmethod
-    def view(parent: tk.Frame, amount: CurrencyView):
+    def configure(parent: tk.Frame, amount: CurrencyView, amount2: CurrencyView):
         amount_wgt = amount(parent)
+        amount2_wgt = amount2(parent)
 
         amount_wgt.grid()
+        amount2_wgt.grid(row=0, column=1)
 
 
 class RentManagerApp:
@@ -54,7 +58,7 @@ class WidgetTest:
         b = tk.Button(self._frame, text='Save', command=self.save)
         b.grid(row=0, column=1, sticky='EW')
 
-        self.cv = CurrencyView(0)
+        self.cv = RentPayment(0, 10).view()
         self.w = self.cv(self._frame)
         self.w.grid(row=1, sticky='NESW')
 
@@ -70,6 +74,11 @@ class WidgetTest:
 
     def save(self):
         print(self.cv.get_state())
+        if self.cv.get_state():
+            self.cv = self.cv.get_state().view()
+            self.w.destroy()
+            self.w = self.cv(self._frame)
+            self.w.grid(row=1, column=0, sticky='NESW')
 
 
 def main() -> None:

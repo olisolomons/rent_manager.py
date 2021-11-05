@@ -3,7 +3,7 @@ import typing
 from dataclasses import dataclass, field
 from abc import ABC, abstractmethod
 import tkinter as tk
-from typing import TypeVar, Generic, Callable, Optional
+from typing import TypeVar, Generic, Callable, Optional, Type
 import inspect
 
 
@@ -24,6 +24,7 @@ class View(ABC):
 
 
 T = TypeVar('T')
+U = TypeVar('U')
 
 
 @dataclass
@@ -56,10 +57,10 @@ class EditableView(View, Generic[T]):
 
 class ViewableRecord(ABC):
     @abstractmethod
-    def configure(self, *args, **kwargs) -> tk.Widget:
+    def configure(self, *args, **kwargs):
         pass
 
-    def view(self):
+    def view(self) -> EditableView:
         return RecordView(self)
 
 
@@ -96,14 +97,46 @@ class RecordView(EditableView[T]):
     def make_field_views(self) -> dict[str, View]:
         sig = inspect.signature(self.data.configure)
         return {
-            field: sig.parameters[field].annotation(getattr(self.data, field))
+            field: self.make_field_view(field, sig)
             for field in list(sig.parameters)[1:]
         }
 
+    def make_field_view(self, field, sig):
+        annotation = sig.parameters[field].annotation
+        field_value = getattr(self.data, field)
 
-@dataclass
-class ViewManager(Generic[T]):
-    data: T
+        if annotation is EditableView:
+            return field_value.view()
+        else:
+            return annotation(field_value)
 
-    def view(self):
+
+class Isomorphism(ABC, Generic[T, U]):
+    @staticmethod
+    @abstractmethod
+    def to(t: T) -> U:
         pass
+
+    @staticmethod
+    @abstractmethod
+    def from_(u: U) -> T:
+        pass
+
+
+def iso_view(iso: Type[Isomorphism[T, ViewableRecord]]) -> Type[EditableView[T]]:
+    class IsoView(EditableView[T]):
+        def __init__(self, data):
+            self.inner_view: ViewableRecord = iso.to(data)
+
+        def edit(self, parent) -> tuple[tk.Widget, Callable[[], T]]:
+            widget, get_state = self.inner_view.view().edit(parent)
+
+            def get():
+                return iso.from_(get_state())
+
+            return widget, get
+
+        def view(self, parent) -> tk.Widget:
+            return self.inner_view.view().view(parent)
+
+    return IsoView

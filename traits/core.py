@@ -7,13 +7,6 @@ from typing import TypeVar, Generic, Callable, Optional, Type
 import inspect
 
 
-class HasTraits:
-    @classmethod
-    def item(cls, name):
-        dataclasses.fields(cls)
-        return
-
-
 class View(ABC):
     @abstractmethod
     def view(self, parent) -> tk.Widget:
@@ -132,7 +125,9 @@ def iso_view(iso: Type[Isomorphism[T, ViewableRecord]]) -> Type[EditableView[T]]
             widget, get_state = self.inner_view.view().edit(parent)
 
             def get():
-                return iso.from_(get_state())
+                state = get_state()
+                if state is not None:
+                    return iso.from_(state)
 
             return widget, get
 

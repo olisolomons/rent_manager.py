@@ -1,11 +1,12 @@
 import tkinter as tk
+from tkinter import messagebox
 from .vertical_scrolled_frame import VerticalScrolledFrame
 from typing import Generic, TypeVar, Optional, Callable
 import typing
 from dataclasses import dataclass
 import dataclasses
 
-T = TypeVar('T', bound=tk.Widget)
+T = TypeVar('T', bound=Callable[[tk.Widget], tk.Widget])
 
 
 @dataclass
@@ -27,7 +28,7 @@ class ListItemRecord(Generic[T]):
 
 
 class WidgetList(VerticalScrolledFrame, Generic[T]):
-    def __init__(self, parent, *args, **kw):
+    def __init__(self, parent, *args, editable=False, **kw):
         super().__init__(parent, *args, **kw)
 
         self.dummy_first_item = ListItemRecord(
@@ -43,6 +44,7 @@ class WidgetList(VerticalScrolledFrame, Generic[T]):
         self.interior.bind_all('<Motion>', self.on_motion)
 
         self.dragged_item: Optional[ListItemRecord[T]] = None
+        self.editable = editable
 
         def stop_dragging(e):
             if self.dragged_item:
@@ -51,30 +53,62 @@ class WidgetList(VerticalScrolledFrame, Generic[T]):
 
         self.interior.bind_all('<ButtonRelease-1>', stop_dragging)
 
-    def add(self, item_func: Callable[[tk.Widget], T]):
+    def add(self, item_func: T):
         item_frame = tk.Frame(self.interior, borderwidth=1, highlightbackground="blue")
         item = item_func(item_frame)
-        item.grid(row=0, column=0, sticky='EW')
-        item_frame.grid_columnconfigure(0, weight=1)
 
-        move_arrow = tk.Label(item_frame, text='↕', cursor='fleur')
-        move_arrow.grid(row=0, column=1)
+        def place_item():
+            item.grid(row=0, column=1, sticky='EW')
 
-        def start_dragging(e):
-            self.dragged_item = item_record
-            item_frame.config(highlightthickness=1)
+        place_item()
+        item_frame.grid_columnconfigure(1, weight=1)
 
-        move_arrow.bind('<ButtonPress-1>', start_dragging)
+        if self.editable:
+            def edit_item():
+                nonlocal item, item_func
 
-        delete_button = tk.Button(
-            item_frame, text='X',
-            command=lambda: self.delete_item(item_record)
-        )
-        delete_button.grid(row=0, column=2)
+                if item_func.editing:
+                    new_state = item_func.get_state()
+                    if new_state is None:
+                        messagebox.showerror("Error", "Please enter valid data before saving")
+                    else:
+                        item.destroy()
+                        item_func.data = new_state
+                        item_func.editing = False
+
+                        item = item_func(item_frame)
+                        place_item()
+
+                        edit_button.config(text="Edit")
+                else:
+                    item.destroy()
+                    item_func.editing = True
+                    item = item_func(item_frame)
+                    place_item()
+
+                    edit_button.config(text="Save")
+
+            edit_button = tk.Button(item_frame, text="Edit", command=edit_item)
+            edit_button.grid(row=0, column=2)
+
+            move_arrow = tk.Label(item_frame, text='↕', cursor='fleur')
+            move_arrow.grid(row=0, column=0)
+
+            def start_dragging(e):
+                self.dragged_item = item_record
+                item_frame.config(highlightthickness=1)
+
+            move_arrow.bind('<ButtonPress-1>', start_dragging)
+
+            delete_button = tk.Button(
+                item_frame, text='X',
+                command=lambda: self.delete_item(item_record)
+            )
+            delete_button.grid(row=0, column=3)
 
         previous_item = self.dummy_last_item.previous_item
         item_record = ListItemRecord(
-            item, item_frame, previous_item.grid_row + 1,
+            item_func, item_frame, previous_item.grid_row + 1,
             next_item=self.dummy_last_item, previous_item=previous_item
         )
         self.dummy_last_item.previous_item = item_record
@@ -126,9 +160,9 @@ class WidgetList(VerticalScrolledFrame, Generic[T]):
             swap1.do_grid()
             swap2.do_grid()
 
-    def iter_items(self):
+    def iter_items(self) -> typing.Iterator[T]:
         node = self.dummy_first_item
         while node.next_item is not self.dummy_last_item:
             node = node.next_item
 
-            yield node
+            yield node.item

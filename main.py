@@ -1,12 +1,11 @@
 import tkinter as tk
 import typing
 from dataclasses import dataclass
-from typing import Generic, TypeVar, Callable, Optional
 
 from tk_utils import WidgetList
 from datetime import date
-from traits.core import ViewableRecord, EditableView
-from traits.views import CurrencyView, DateView
+from traits.core import ViewableRecord
+from traits.views import CurrencyView, DateView, ListView
 
 
 @dataclass
@@ -48,15 +47,25 @@ class WidgetTest:
     def __init__(self, parent) -> None:
         self._frame = tk.Frame(parent)
 
+        self._frame.grid_columnconfigure(0, weight=1)
         b = tk.Button(self._frame, text='Edit', command=self.edit)
         b.grid(row=0, sticky='EW')
         b = tk.Button(self._frame, text='Save', command=self.save)
         b.grid(row=0, column=1, sticky='EW')
 
         now = date.today()
-        self.cv = RentPayment(100, now).view()
-        self.w = self.cv(self._frame)
+        self.data = [RentPayment(100, now), RentPayment(123, now)]
+        self.count = 0
+
+
+        self.view = ListView(self.data, new_item_func=self.add)
+        self.w = self.view(self._frame)
         self.w.grid(row=1, sticky='NESW')
+
+    def add(self):
+        self.count += 1
+        return RentPayment(self.count, date.today())
+
 
     @property
     def frame(self) -> tk.Frame:
@@ -64,16 +73,18 @@ class WidgetTest:
 
     def edit(self):
         self.w.destroy()
-        self.cv.editing = True
-        self.w = self.cv(self._frame)
+
+        self.view.editing = True
+        self.w = self.view(self._frame)
         self.w.grid(row=1, column=0, sticky='NESW')
 
     def save(self):
-        print(self.cv.get_state())
-        if self.cv.get_state():
-            self.cv = self.cv.get_state().view()
+        print(self.view.get_state())
+        if self.view.get_state():
+            self.data = self.view.get_state()
+            self.view = ListView(self.data, new_item_func=self.add)
             self.w.destroy()
-            self.w = self.cv(self._frame)
+            self.w = self.view(self._frame)
             self.w.grid(row=1, column=0, sticky='NESW')
 
 

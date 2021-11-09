@@ -1,47 +1,11 @@
-import re
 import typing
-from dataclasses import dataclass, field
-from abc import ABC, abstractmethod
+from dataclasses import dataclass
 import tkinter as tk
 from datetime import date
-from typing import TypeVar, Generic, Callable, Optional, Protocol, Type
+from typing import Callable, Optional, Protocol, Type
 
 import tk_utils
-from traits.core import EditableView, ViewableRecord, Isomorphism, U, T, iso_view
-
-
-@dataclass
-class CurrencyView(EditableView):
-    data: int
-    currency_symbol: str = '£'
-
-    def data_string(self):
-        return f'{self.data / 100:.2f}'
-
-    def view(self, parent):
-        return tk.Label(parent, text=self.currency_symbol + self.data_string())
-
-    def edit(self, parent):
-        frame = tk.Frame(parent)
-        frame.grid_columnconfigure(1, weight=1)
-
-        currency_label = tk.Label(frame, text=self.currency_symbol)
-        currency_label.grid()
-
-        valid_pattern = re.compile(r'^(\d*\.\d\d|\d+)$')
-        entry = tk_utils.ValidatingEntry(
-            frame, self.data_string(),
-            validate_function=lambda s: bool(valid_pattern.match(s)),
-            disallowed_sequences=r'[^\d.]'
-        )
-        entry.grid(row=0, column=1, sticky='EW')
-
-        def get():
-            s = entry.get()
-            if s is not None:
-                return int(float(s) * 100)
-
-        return frame, get
+from traits.core import EditableView, ViewableRecord, Isomorphism, iso_view
 
 
 class IntInRangeProtocol(Protocol):

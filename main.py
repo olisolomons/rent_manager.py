@@ -6,7 +6,7 @@ from typing import Generic, TypeVar, Callable, Optional
 from tk_utils import WidgetList
 from datetime import date
 from traits.core import ViewableRecord, EditableView
-from traits.views import CurrencyView, MyDate, DateView
+from traits.views import CurrencyView, DateView
 
 
 @dataclass

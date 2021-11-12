@@ -11,9 +11,8 @@ T = TypeVar('T')
 @dataclass
 class ListView(EditableView[list[T]], Generic[T]):
     data: list[T]
-    new_item_func: Callable[[], T] = None
     item_view_func: Callable[[T], EditableView[T]] = RecordView
-    add_button_text: str = "Add"
+    add_button_widget_func: Callable[[tk.Frame, Callable[[T], None]], tk.Widget] = None
 
     def view(self, parent) -> tk.Widget:
         frame = WidgetList(parent, editable=False)
@@ -25,18 +24,17 @@ class ListView(EditableView[list[T]], Generic[T]):
 
     def edit(self, parent) -> tuple[tk.Widget, Callable[[], list[T]]]:
         frame = tk.Frame(parent)
-        list_frame = WidgetList(frame, editable=True)
+        list_frame: WidgetList[EditableView[T]] = WidgetList(frame, editable=True)
         frame.grid_columnconfigure(0, weight=1)
         frame.grid_rowconfigure(0, weight=1)
 
         list_frame.grid(row=0, column=0, sticky='NESW')
 
-        def add():
-            new_item = self.new_item_func()
+        def add(new_item: T):
             list_frame.add(self.item_view_func(new_item))
 
-        if self.new_item_func:
-            add_button = tk.Button(frame, text=self.add_button_text, command=add)
+        if self.add_button_widget_func:
+            add_button = self.add_button_widget_func(frame, add)
             add_button.grid(row=1, column=0, sticky='EW')
 
         for item in self.data:
@@ -47,3 +45,11 @@ class ListView(EditableView[list[T]], Generic[T]):
             return [item.data for item in list_frame.iter_items()]
 
         return frame, get
+
+    @staticmethod
+    def add_button(new_item_func: Callable[[], T], *, text: str = 'Add') \
+            -> Callable[[tk.Frame, Callable[[T], None]], tk.Widget]:
+        def add_button_widget_func(frame: tk.Frame, add: Callable[[T], None]) -> tk.Widget:
+            return tk.Button(frame, text=text, command=lambda: add(new_item_func()))
+
+        return add_button_widget_func

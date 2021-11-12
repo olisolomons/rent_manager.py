@@ -1,10 +1,10 @@
 import tkinter as tk
-import typing
+from typing import Callable
 from dataclasses import dataclass
 
 from tk_utils import WidgetList
 from datetime import date
-from traits.core import ViewableRecord
+from traits.core import ViewableRecord, EditableView
 from traits.views import CurrencyView, DateView, ListView
 
 
@@ -57,15 +57,13 @@ class WidgetTest:
         self.data = [RentPayment(100, now), RentPayment(123, now)]
         self.count = 0
 
-
-        self.view = ListView(self.data, new_item_func=self.add)
+        self.view = ListView(self.data, add_button_widget_func=ListView.add_button(self.add))
         self.w = self.view(self._frame)
         self.w.grid(row=1, sticky='NESW')
 
     def add(self):
         self.count += 1
         return RentPayment(self.count, date.today())
-
 
     @property
     def frame(self) -> tk.Frame:
@@ -82,7 +80,8 @@ class WidgetTest:
         print(self.view.get_state())
         if self.view.get_state():
             self.data = self.view.get_state()
-            self.view = ListView(self.data, new_item_func=self.add)
+
+            self.view = ListView(self.data, add_button_widget_func=ListView.add_button(self.add))
             self.w.destroy()
             self.w = self.view(self._frame)
             self.w.grid(row=1, column=0, sticky='NESW')

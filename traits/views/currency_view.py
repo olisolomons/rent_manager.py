@@ -6,6 +6,7 @@ import tkinter as tk
 from tk_utils import ValidatingEntry
 import re
 
+
 @dataclass
 class CurrencyView(EditableView):
     data: int

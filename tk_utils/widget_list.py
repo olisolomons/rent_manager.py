@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import messagebox
 from .vertical_scrolled_frame import VerticalScrolledFrame
+from .complete_bind import complete_bind
 from typing import Generic, TypeVar, Optional, Callable
 import typing
 from dataclasses import dataclass
@@ -89,11 +90,12 @@ class WidgetList(VerticalScrolledFrame, Generic[T]):
                     item.destroy()
                     item_func.editing = True
                     item = item_func(item_frame)
+                    complete_bind(item, '<Return>', lambda e: edit_item())
                     place_item()
 
                     edit_button.config(text="Save")
 
-            item_frame.bind('<Return>', lambda e: edit_item())
+            complete_bind(item, '<Return>', lambda e: edit_item())
             edit_button = tk.Button(item_frame, text="Save" if self.editable else "Edit", command=edit_item)
             edit_button.grid(row=0, column=2)
 

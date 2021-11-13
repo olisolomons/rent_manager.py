@@ -65,14 +65,18 @@ class MyDate(ViewableRecord):
                   day: int_in_range(1, 31, pad_digits=2),
                   month: int_in_range(1, 12, pad_digits=2),
                   year: int_in_range(1000, 3000)):
+        parent.grid_columnconfigure(0, weight=1)
+        parent.grid_columnconfigure(2, weight=1)
+        parent.grid_columnconfigure(4, weight=1)
+
         day_entry = day(parent)
-        day_entry.grid(row=0, column=0)
+        day_entry.grid(row=0, column=0, sticky='EW')
         tk.Label(parent, text='/').grid(row=0, column=1)
         month_entry = month(parent)
-        month_entry.grid(row=0, column=2)
+        month_entry.grid(row=0, column=2, sticky='EW')
         tk.Label(parent, text='/').grid(row=0, column=3)
         year_entry = year(parent)
-        year_entry.grid(row=0, column=4)
+        year_entry.grid(row=0, column=4, sticky='EW')
 
         def day_validate(day_str):
             if not (month.get_state() is None or year.get_state() is None):

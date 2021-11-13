@@ -60,17 +60,6 @@ class OtherTransaction(ViewableRecord):
             grid('Comment:', comment(parent))
 
 
-def new_rent_payment():
-    def rent_payment_generator():
-        count = 0
-        while True:
-            count += 1
-            yield RentPayment(count, date.today())
-
-    gen = rent_payment_generator()
-    return lambda: next(gen)
-
-
 def new_other_transaction(frame: tk.Frame, add: Callable[[OtherTransaction], None]) -> tk.Widget:
     buttons_frame = tk.Frame(frame)
     for i, reason in enumerate(TransactionReason):
@@ -85,6 +74,10 @@ def new_other_transaction(frame: tk.Frame, add: Callable[[OtherTransaction], Non
     return buttons_frame
 
 
+RentPaymentsView = partial(ListView, add_button_widget_func=ListView.add_button(lambda: RentPayment(0, date.today())))
+OtherTransactionsView = partial(ListView, add_button_widget_func=new_other_transaction)
+
+
 @dataclass
 class RentManagerState(ViewableRecord):
     rent_payments: list[RentPayment]
@@ -92,8 +85,8 @@ class RentManagerState(ViewableRecord):
 
     @staticmethod
     def configure(parent: tk.Frame,
-                  rent_payments: partial(ListView, add_button_widget_func=ListView.add_button(new_rent_payment())),
-                  other_transactions: partial(ListView, add_button_widget_func=new_other_transaction)):
+                  rent_payments: RentPaymentsView,
+                  other_transactions: OtherTransactionsView):
         rent_payments(parent).grid(row=0, column=0, sticky='NESW')
         other_transactions(parent).grid(row=0, column=1, sticky='NESW')
 
@@ -105,71 +98,28 @@ class RentManagerState(ViewableRecord):
 class RentManagerApp:
     def __init__(self, parent) -> None:
         self._frame = tk.Frame(parent)
-        b = tk.Button(self._frame, text='Press Me!', command=self.add_row)
-        b.grid(row=0, sticky='EW')
 
         self._frame.grid_columnconfigure(0, weight=1)
-
-        self.widget_list = WidgetList(self._frame)
-        self.widget_list.grid(row=1, sticky='NESW')
-        self._frame.grid_rowconfigure(1, weight=1)
-
-        self.count = 0
-
-    @property
-    def frame(self) -> tk.Frame:
-        return self._frame
-
-    def add_row(self):
-        l = self.widget_list.add(lambda parent: tk.Label(parent, text=f'Thing {self.count}'))
-
-        self.count += 1
-
-
-class WidgetTest:
-    def __init__(self, parent) -> None:
-        self._frame = tk.Frame(parent)
-
-        self._frame.grid_columnconfigure(0, weight=1)
-        b = tk.Button(self._frame, text='Edit', command=self.edit)
-        b.grid(row=0, sticky='EW')
-        b = tk.Button(self._frame, text='Save', command=self.save)
-        b.grid(row=0, column=1, sticky='EW')
+        self._frame.grid_rowconfigure(0, weight=1)
 
         self.data = RentManagerState([], [])
 
         self.view = self.data.view()
+        self.view.editing = True
         self.w = self.view(self._frame)
-        self.w.grid(row=1, sticky='NESW')
+        self.w.grid(sticky='NESW')
 
     @property
     def frame(self) -> tk.Frame:
         return self._frame
 
-    def edit(self):
-        self.w.destroy()
-
-        self.view.editing = True
-        self.w = self.view(self._frame)
-        self.w.grid(row=1, column=0, sticky='NESW')
-
-    def save(self):
-        print(self.view.get_state())
-        if self.view.get_state():
-            self.data = self.view.get_state()
-
-            self.view = self.data.view()
-            self.w.destroy()
-            self.w = self.view(self._frame)
-            self.w.grid(row=1, column=0, sticky='NESW')
-
 
 def main() -> None:
-    w, h = 800, 600
+    w, h = 1200, 1000
 
     root = tk.Tk()
     root.geometry(f'{w}x{h}')
-    app = WidgetTest(root)
+    app = RentManagerApp(root)
     # app = RentManagerApp(root)
     app.frame.pack(fill=tk.BOTH, expand=True)
 

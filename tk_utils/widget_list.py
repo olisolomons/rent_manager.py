@@ -55,6 +55,8 @@ class WidgetList(VerticalScrolledFrame, Generic[T]):
 
     def add(self, item_func: T):
         item_frame = tk.Frame(self.interior, borderwidth=1, highlightbackground="blue")
+        if self.editable:
+            item_func.editing = True
         item = item_func(item_frame)
 
         def place_item():
@@ -88,7 +90,7 @@ class WidgetList(VerticalScrolledFrame, Generic[T]):
 
                     edit_button.config(text="Save")
 
-            edit_button = tk.Button(item_frame, text="Edit", command=edit_item)
+            edit_button = tk.Button(item_frame, text="Save" if self.editable else "Edit", command=edit_item)
             edit_button.grid(row=0, column=2)
 
             move_arrow = tk.Label(item_frame, text='↕', cursor='fleur')

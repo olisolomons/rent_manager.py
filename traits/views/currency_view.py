@@ -32,6 +32,7 @@ class CurrencyView(EditableView):
             disallowed_sequences=r'[^\d.]'
         )
         entry.grid(row=0, column=1, sticky='EW')
+        entry.string_var.trace('w', lambda *args: self.notify_changed())
 
         def get():
             s = entry.get()

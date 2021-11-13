@@ -24,6 +24,7 @@ U = TypeVar('U')
 class EditableView(View, Generic[T]):
     _editing: bool = field(default=False, init=False)
     get_state: Optional[Callable[[], T]] = field(default=None, init=False)
+    change_listeners: set[Callable[[T], None]] = field(default_factory=set, init=False)
 
     @property
     def editing(self):
@@ -47,7 +48,14 @@ class EditableView(View, Generic[T]):
         else:
             return self.view(parent)
 
+    def notify_changed(self) -> None:
+        new_state = self.get_state()
+        if new_state:
+            for change_listener in self.change_listeners:
+                change_listener(new_state)
 
+
+@dataclass
 class ViewableRecord(ABC):
     @abstractmethod
     def configure(self, *args, **kwargs):
@@ -65,7 +73,9 @@ class RecordView(EditableView[T]):
         field_views = self.make_field_views()
         for view in field_views.values():
             if hasattr(view, 'editing'):
+                view = typing.cast(EditableView, view)
                 view.editing = True
+                view.change_listeners.add(lambda s: self.notify_changed())
 
         def get():
             results = {
@@ -119,6 +129,7 @@ class Isomorphism(ABC, Generic[T, U]):
 def iso_view(iso: Type[Isomorphism[T, ViewableRecord]]) -> Type[EditableView[T]]:
     class IsoView(EditableView[T]):
         def __init__(self, data):
+            super().__init__()
             self.inner_view: ViewableRecord = iso.to(data)
 
         def edit(self, parent) -> tuple[tk.Widget, Callable[[], T]]:

@@ -91,8 +91,8 @@ class RentManagerState(ViewableRecord):
         other_transactions(parent).grid(row=0, column=1, sticky='NESW')
 
         parent.grid_rowconfigure(0, weight=1)
-        parent.grid_columnconfigure(0, weight=1)
-        parent.grid_columnconfigure(1, weight=1)
+        parent.grid_columnconfigure(0, weight=1, uniform='rent_manager')
+        parent.grid_columnconfigure(1, weight=1, uniform='rent_manager')
 
 
 class RentManagerApp:
@@ -105,6 +105,7 @@ class RentManagerApp:
         self.data = RentManagerState([], [])
 
         self.view = self.data.view()
+        self.view.change_listeners.add(self.on_change)
         self.view.editing = True
         self.w = self.view(self._frame)
         self.w.grid(sticky='NESW')
@@ -112,6 +113,9 @@ class RentManagerApp:
     @property
     def frame(self) -> tk.Frame:
         return self._frame
+
+    def on_change(self, new_state):
+        print(new_state)
 
 
 def main() -> None:

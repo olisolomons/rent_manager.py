@@ -18,4 +18,6 @@ class StringView(EditableView[str]):
         def get():
             return string_var.get()
 
+        string_var.trace('w', lambda *args: self.notify_changed())
+
         return entry, get

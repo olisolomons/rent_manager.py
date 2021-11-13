@@ -28,7 +28,7 @@ class ListItemRecord(Generic[T]):
 
 
 class WidgetList(VerticalScrolledFrame, Generic[T]):
-    def __init__(self, parent, *args, editable=False, **kw):
+    def __init__(self, parent, *args, editable: bool = False, notify_changed: Callable[[], None], **kw):
         super().__init__(parent, *args, **kw)
 
         self.dummy_first_item = ListItemRecord(
@@ -45,11 +45,13 @@ class WidgetList(VerticalScrolledFrame, Generic[T]):
 
         self.dragged_item: Optional[ListItemRecord[T]] = None
         self.editable = editable
+        self.notify_changed = notify_changed
 
         def stop_dragging(e):
             if self.dragged_item:
                 self.dragged_item.frame.config(highlightthickness=0)
                 self.dragged_item = None
+                self.notify_changed()
 
         self.interior.bind_all('<ButtonRelease-1>', stop_dragging)
 
@@ -82,6 +84,7 @@ class WidgetList(VerticalScrolledFrame, Generic[T]):
                         place_item()
 
                         edit_button.config(text="Edit")
+                        self.notify_changed()
                 else:
                     item.destroy()
                     item_func.editing = True
@@ -90,6 +93,7 @@ class WidgetList(VerticalScrolledFrame, Generic[T]):
 
                     edit_button.config(text="Save")
 
+            item_frame.bind('<Return>', lambda e: edit_item())
             edit_button = tk.Button(item_frame, text="Save" if self.editable else "Edit", command=edit_item)
             edit_button.grid(row=0, column=2)
 
@@ -117,6 +121,9 @@ class WidgetList(VerticalScrolledFrame, Generic[T]):
         previous_item.next_item = item_record
 
         item_record.do_grid()
+
+        if not self.editable:
+            self.notify_changed()
 
         return item
 

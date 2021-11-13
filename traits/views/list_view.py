@@ -24,7 +24,7 @@ class ListView(EditableView[list[T]], Generic[T]):
 
     def edit(self, parent) -> tuple[tk.Widget, Callable[[], list[T]]]:
         frame = tk.Frame(parent)
-        list_frame: WidgetList[EditableView[T]] = WidgetList(frame, editable=True)
+        list_frame: WidgetList[EditableView[T]] = WidgetList(frame, editable=True, notify_changed=self.notify_changed)
         frame.grid_columnconfigure(0, weight=1)
         frame.grid_rowconfigure(0, weight=1)
 

@@ -1,13 +1,11 @@
 import enum
-import itertools
 import tkinter as tk
 from functools import partial
 from typing import Callable
 from dataclasses import dataclass
 
-from tk_utils import WidgetList
 from datetime import date
-from traits.core import ViewableRecord, EditableView
+from traits.core import ViewableRecord
 from traits.views import CurrencyView, DateView, ListView, StringView
 
 
@@ -18,8 +16,10 @@ class RentPayment(ViewableRecord):
 
     @staticmethod
     def configure(parent: tk.Frame, amount: CurrencyView, received_on: DateView):
-        amount(parent).grid()
+        amount(parent).grid(padx=15)
         received_on(parent).grid(row=0, column=1)
+        parent.grid_columnconfigure(0, weight=1)
+        parent.grid_columnconfigure(1, weight=3)
 
 
 class TransactionReason(enum.Enum):
@@ -42,8 +42,8 @@ class OtherTransaction(ViewableRecord):
         i = 0
 
         def grid(name: str, widget: tk.Widget):
-            label = tk.Label(parent, text=name)
             nonlocal i
+            label = tk.Label(parent, text=name)
             if editing:
                 label.grid(row=i, column=0, sticky='W')
                 widget.grid(row=i, column=1, sticky='EW')
@@ -54,7 +54,7 @@ class OtherTransaction(ViewableRecord):
             i += 1
 
         grid('', tk.Label(parent, text=f'{self.reason.name}: '))
-        grid('Amount:', amount(parent))
+        grid('Amount:' if editing else '', amount(parent))
         grid('Date:', _date(parent))
         if self.reason != TransactionReason.Payment:
             grid('Comment:', comment(parent))

@@ -31,7 +31,7 @@ class ListView(EditableView[list[T]], Generic[T]):
         list_frame.grid(row=0, column=0, sticky='NESW')
 
         def add(new_item: T):
-            list_frame.add(self.item_view_func(new_item))
+            list_frame.add(self.item_view_func(new_item), editing_item=True)
 
         if self.add_button_widget_func:
             add_button = self.add_button_widget_func(frame, add)

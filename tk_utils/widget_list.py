@@ -29,7 +29,7 @@ class ListItemRecord(Generic[T]):
 
 
 class WidgetList(VerticalScrolledFrame, Generic[T]):
-    def __init__(self, parent, *args, editable: bool = False, notify_changed: Callable[[], None], **kw):
+    def __init__(self, parent, *args, editable: bool = False, notify_changed: Callable[[], None] = lambda: None, **kw):
         super().__init__(parent, *args, **kw)
 
         self.dummy_first_item = ListItemRecord(
@@ -56,9 +56,9 @@ class WidgetList(VerticalScrolledFrame, Generic[T]):
 
         self.interior.bind_all('<ButtonRelease-1>', stop_dragging)
 
-    def add(self, item_func: T):
+    def add(self, item_func: T, editing_item: bool = False):
         item_frame = tk.Frame(self.interior, borderwidth=1, highlightbackground="blue")
-        if self.editable:
+        if self.editable and editing_item:
             item_func.editing = True
         item = item_func(item_frame)
 
@@ -96,7 +96,7 @@ class WidgetList(VerticalScrolledFrame, Generic[T]):
                     edit_button.config(text="Save")
 
             complete_bind(item, '<Return>', lambda e: edit_item())
-            edit_button = tk.Button(item_frame, text="Save" if self.editable else "Edit", command=edit_item)
+            edit_button = tk.Button(item_frame, text="Save" if item_func.editing else "Edit", command=edit_item)
             edit_button.grid(row=0, column=2)
 
             move_arrow = tk.Label(item_frame, text='↕', cursor='fleur')

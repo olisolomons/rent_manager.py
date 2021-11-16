@@ -1,12 +1,15 @@
+import abc
 import enum
 import tkinter as tk
 from functools import partial
-from typing import Callable
+from typing import Callable, Optional
 from dataclasses import dataclass
 
 from datetime import date
 from traits.core import ViewableRecord
 from traits.views import CurrencyView, DateView, ListView, StringView
+
+import sys
 
 
 @dataclass
@@ -95,7 +98,50 @@ class RentManagerState(ViewableRecord):
         parent.grid_columnconfigure(1, weight=1, uniform='rent_manager')
 
 
-class RentManagerApp:
+class DocumentManager(abc.ABC):
+    @abc.abstractmethod
+    def save(self):
+        pass
+
+    @abc.abstractmethod
+    def save_as(self):
+        pass
+
+    @abc.abstractmethod
+    def open(self):
+        pass
+
+    @abc.abstractmethod
+    def new(self):
+        pass
+
+    @abc.abstractmethod
+    def undo(self):
+        pass
+
+    @abc.abstractmethod
+    def redo(self):
+        pass
+
+
+class RentManagerMenu(tk.Menu):
+    def __init__(self, parent, document_manager: DocumentManager):
+        super().__init__(parent)
+
+        file_menu = tk.Menu(self)
+        self.add_cascade(label='File', menu=file_menu)
+        file_menu.add_command(label='New', command=document_manager.new)
+        file_menu.add_command(label='Open', command=document_manager.open)
+        file_menu.add_command(label='Save', command=document_manager.save)
+        file_menu.add_command(label='Save as', command=document_manager.save_as)
+
+        edit = tk.Menu(self)
+        self.add_cascade(label='Edit', menu=edit)
+        edit.add_command(label='Undo', command=document_manager.undo)
+        edit.add_command(label='Redo', command=document_manager.redo)
+
+
+class RentManagerApp(DocumentManager):
     def __init__(self, parent) -> None:
         self._frame = tk.Frame(parent)
 
@@ -110,12 +156,48 @@ class RentManagerApp:
         self.w = self.view(self._frame)
         self.w.grid(sticky='NESW')
 
+        self.bind_key(self.save)
+        self.bind_key(self.save_as, shift=True)
+        self.bind_key(self.new)
+        self.bind_key(self.open)
+        self.bind_key(self.undo, key='z')
+        self.bind_key(self.redo, key='y')
+        self.bind_key(self.redo, key='z', shift=True)
+
+    def bind_key(self, func: Callable[[], None], key: Optional[str] = None, shift: bool = False):
+        ctrl = 'Meta_L' if sys.platform == 'darwin' else 'Control'
+        shift_str = '-Shift' if shift else ''
+        if key is None:
+            key = func.__name__[0]
+        if shift:
+            key = key.upper()
+        sequence = f'<{ctrl}{shift_str}-{key}>'
+        self.frame.bind_all(sequence, lambda e: func())
+
     @property
     def frame(self) -> tk.Frame:
         return self._frame
 
     def on_change(self, new_state):
         print(new_state)
+
+    def save(self):
+        print('save')
+
+    def save_as(self):
+        print('save_as')
+
+    def open(self):
+        print('open')
+
+    def new(self):
+        print('new')
+
+    def undo(self):
+        print('undo')
+
+    def redo(self):
+        print('redo')
 
 
 def main() -> None:
@@ -124,8 +206,9 @@ def main() -> None:
     root = tk.Tk()
     root.geometry(f'{w}x{h}')
     app = RentManagerApp(root)
-    # app = RentManagerApp(root)
     app.frame.pack(fill=tk.BOTH, expand=True)
+
+    root.config(menu=RentManagerMenu(root, app))
 
     root.mainloop()
 

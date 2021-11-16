@@ -2,6 +2,7 @@ import sys
 from typing import Callable, Optional
 import tkinter as tk
 
+import dataclass_json
 from .menu import DocumentManager
 
 from .state.rent_manager_state import RentManagerState
@@ -49,12 +50,26 @@ class RentManagerApp(DocumentManager):
 
     def save(self):
         print('save')
+        state = self.view.get_state()
+        print(f'{state=}')
+        with open('test.json', 'w') as f:
+            dataclass_json.dump(state, f)
 
     def save_as(self):
         print('save_as')
 
     def open(self):
         print('open')
+        self.w.destroy()
+
+        with open('test.json', 'r') as f:
+            self.data = dataclass_json.load(RentManagerState, f)
+
+        self.view = self.data.view()
+        self.view.change_listeners.add(self.on_change)
+        self.view.editing = True
+        self.w = self.view(self._frame)
+        self.w.grid(sticky='NESW')
 
     def new(self):
         print('new')

@@ -79,9 +79,11 @@ class RecordView(EditableView[T]):
 
         def get():
             results = {
-                field: typing.cast(EditableView, view).get_state()
+                field: editable_view.get_state()
                 for field, view in field_views.items()
                 if hasattr(view, 'editing')
+                for editable_view in (typing.cast(EditableView, view),)
+                if editable_view.get_state
             }
             if all(result is not None for result in results.values()):
                 return dataclasses.replace(self.data, **results)

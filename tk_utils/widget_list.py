@@ -124,7 +124,7 @@ class WidgetList(VerticalScrolledFrame, Generic[T]):
 
         item_record.do_grid()
 
-        if not self.editable:
+        if self.editable and editing_item:
             self.notify_changed()
 
         return item

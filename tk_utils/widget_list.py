@@ -42,9 +42,9 @@ class WidgetList(VerticalScrolledFrame, Generic[T]):
         self.dummy_last_item.previous_item = self.dummy_first_item
 
         self.interior.grid_columnconfigure(0, weight=1)
-        self.interior.bind_all('<Motion>', self.on_motion)
+        self.interior.bind_all('<Motion>', self.on_motion, add='+')
 
-        self.dragged_item: Optional[ListItemRecord[T]] = None
+        self._dragged_item: Optional[ListItemRecord[T]] = None
         self.editable = editable
         self.notify_changed = notify_changed
 
@@ -54,7 +54,15 @@ class WidgetList(VerticalScrolledFrame, Generic[T]):
                 self.dragged_item = None
                 self.notify_changed()
 
-        self.interior.bind_all('<ButtonRelease-1>', stop_dragging)
+        self.interior.bind_all('<ButtonRelease-1>', stop_dragging, add='+')
+
+    @property
+    def dragged_item(self):
+        return self._dragged_item
+
+    @dragged_item.setter
+    def dragged_item(self, val):
+        self._dragged_item=val
 
     def add(self, item_func: T, editing_item: bool = False):
         item_frame = tk.Frame(self.interior, borderwidth=1, highlightbackground="blue")

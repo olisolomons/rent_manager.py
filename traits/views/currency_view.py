@@ -1,42 +1,62 @@
 from dataclasses import dataclass
 
-from traits.core import EditableView
+from traits.core import EditableView, Act, T, ViewWrapper
 import tkinter as tk
 
 from tk_utils import ValidatingEntry
 import re
 
+from traits.views.common.string_var_undo_manager import StringEditableView
 
-@dataclass
-class CurrencyView(EditableView):
-    data: int
+
+class _CurrencyView(StringEditableView[int]):
     currency_symbol: str = '£'
 
-    def data_string(self):
-        return f'{self.data / 100:.2f}'
+    @staticmethod
+    def data_string(data):
+        return f'{data / 100:.2f}'
 
-    def view(self, parent):
-        return tk.Label(parent, text=self.currency_symbol + self.data_string())
+    @classmethod
+    def view(cls, parent, data):
+        return tk.Label(parent, text=cls.currency_symbol + cls.data_string(data))
 
-    def edit(self, parent):
-        frame = tk.Frame(parent)
-        frame.grid_columnconfigure(1, weight=1)
+    def __init__(self, parent, data):
+        super().__init__()
 
-        currency_label = tk.Label(frame, text=self.currency_symbol)
+        self.frame = tk.Frame(parent)
+        self.frame.grid_columnconfigure(1, weight=1)
+
+        currency_label = tk.Label(self.frame, text=self.currency_symbol)
         currency_label.grid()
 
         valid_pattern = re.compile(r'^(\d*\.\d\d|\d+)$')
-        entry = ValidatingEntry(
-            frame, self.data_string(),
+        self._entry = ValidatingEntry(
+            self.frame, self.data_string(data),
             validate_function=lambda s: bool(valid_pattern.match(s)),
             disallowed_sequences=r'[^\d.]'
         )
-        entry.grid(row=0, column=1, sticky='EW')
-        entry.string_var.trace('w', lambda *args: self.notify_changed())
+        self._entry.grid(row=0, column=1, sticky='EW')
 
-        def get():
-            s = entry.get()
-            if s is not None:
-                return int(float(s) * 100)
+        self.setup()
 
-        return frame, get
+
+    @property
+    def string_var(self) -> tk.StringVar:
+        return self._entry.string_var
+
+    @property
+    def entry(self) -> tk.Entry:
+        return self._entry
+
+    @property
+    def widget(self):
+        return self.frame
+
+    def get_state(self) -> int:
+        s = self._entry.get()
+        if s is not None:
+            return int(float(s) * 100)
+
+
+class CurrencyView(ViewWrapper):
+    wrapping_class = _CurrencyView

@@ -9,6 +9,9 @@ from tkinter import filedialog
 from tkinter import simpledialog
 
 import dataclass_json
+import tk_utils
+from traits.core import ViewWrapper
+from traits.undo_manager import UndoManager
 from . import config
 from .menu import DocumentManager
 
@@ -38,15 +41,17 @@ class RentManagerApp(DocumentManager):
         self._frame.grid_columnconfigure(0, weight=1)
         self._frame.grid_rowconfigure(0, weight=1)
 
-        self.data = RentManagerState([], [])
         self.file_path: Optional[str] = None
+
         self.changed = False
 
-        self.view = self.data.view()
-        self.view.change_listeners.add(self.on_change)
-        self.view.editing = True
-        self.w = self.view(self._frame)
-        self.w.grid(sticky='NESW')
+        # noinspection PyTypeChecker
+        self.view: ViewWrapper = None
+        # noinspection PyTypeChecker
+        self.w: tk.Widget = None
+        # noinspection PyTypeChecker
+        self.undo_manager: UndoManager = None
+        self.populate_from_data(RentManagerState())
 
         self.bind_key(self.save)
         self.bind_key(self.save_as, shift=True)
@@ -57,6 +62,18 @@ class RentManagerApp(DocumentManager):
         self.bind_key(self.redo, key='z', shift=True)
 
         self._config = config.load()
+
+    def populate_from_data(self, data: RentManagerState):
+        self.changed = False
+
+        self.view = data.view(editing=True)
+        self.w = self.view(self._frame)
+
+        self.view.change_listeners.add(self.on_change)
+
+        self.w.grid(sticky=tk_utils.STICKY_ALL)
+
+        self.undo_manager = UndoManager.from_wrapper(self.view)
 
     @property
     def config(self):
@@ -83,7 +100,6 @@ class RentManagerApp(DocumentManager):
 
     def on_change(self, new_state):
         self.changed = True
-        print(new_state)
 
     def filedialog(self, dialog):
         top = self.frame.winfo_toplevel()
@@ -147,15 +163,8 @@ class RentManagerApp(DocumentManager):
         self.w.destroy()
 
         with open(file_path, 'r') as f:
-            self.data = dataclass_json.load(RentManagerState, f)
-
-        self.view = self.data.view()
-        self.view.change_listeners.add(self.on_change)
-        self.view.editing = True
-        self.w = self.view(self._frame)
-        self.w.grid(sticky='NESW')
-
-        self.changed = False
+            data = dataclass_json.load(RentManagerState, f)
+            self.populate_from_data(data)
 
     def new(self):
         cancelled = self.prompt_unsaved_changes()
@@ -164,19 +173,12 @@ class RentManagerApp(DocumentManager):
 
         self.w.destroy()
 
-        self.data = RentManagerState([], [])
+        self.populate_from_data(RentManagerState())
+
         self.file_path: Optional[str] = None
 
-        self.view = self.data.view()
-        self.view.change_listeners.add(self.on_change)
-        self.view.editing = True
-        self.w = self.view(self._frame)
-        self.w.grid(sticky='NESW')
-
-        self.changed = False
-
     def undo(self):
-        print('undo')
+        self.undo_manager.undo()
 
     def redo(self):
-        print('redo')
+        self.undo_manager.redo()

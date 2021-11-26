@@ -5,53 +5,73 @@ from datetime import date
 from typing import Callable, Optional, Protocol, Type
 
 import tk_utils
-from traits.core import EditableView, ViewableRecord, Isomorphism, iso_view
+from traits.core import EditableView, ViewableRecord, Isomorphism, iso_view, ViewWrapper
+from traits.views.common.string_var_undo_manager import StringEditableView
 
 
-class IntInRangeProtocol(Protocol):
-    extra_validate: Optional[Callable[[str], bool]]
+class BaseIntInRange(StringEditableView):
+    low: int
+    high: int
+    pad_digits: Optional[int] = None
 
-    def __call__(self, parent) -> tk.Widget:
-        pass
+    @classmethod
+    def view(cls, parent, data) -> tk.Widget:
+        return tk.Label(parent, text=cls.data_string(data))
 
-    def get_state(self) -> int:
-        pass
+    @classmethod
+    def data_string(cls, data):
+        if cls.pad_digits is None:
+            return int(data)
+        else:
+            return f'{data:0>{cls.pad_digits}}'
 
+    def __init__(self, parent, data):
+        super().__init__()
 
-def int_in_range(low, high, pad_digits=None) -> Type[IntInRangeProtocol]:
-    @dataclass
-    class IntInRange(EditableView):
-        data: int
-        extra_validate: Optional[Callable[[str], bool]] = None
+        self.data = data
+        self.extra_validate: Optional[Callable[[str], bool]] = None
 
-        def data_string(self):
-            if pad_digits is None:
-                return int(self.data)
-            else:
-                return f'{self.data:0>{pad_digits}}'
-
-        def view(self, parent) -> tk.Widget:
-            return tk.Label(parent, text=self.data_string())
-
-        def edit(self, parent) -> tuple[tk.Widget, Callable[[], int]]:
-            def validate(s):
-                return len(s) > 0 and (low <= int(s) <= high) and (
-                    self.extra_validate(s) if self.extra_validate else True
-                )
-
-            entry = tk_utils.ValidatingEntry(
-                parent, self.data_string(),
-                validate_function=validate,
-                disallowed_sequences=r'[^\d]'
+        def validate(s):
+            return len(s) > 0 and (self.low <= int(s) <= self.high) and (
+                self.extra_validate(s) if self.extra_validate else True
             )
 
-            def get():
-                if entry.get() is not None:
-                    return int(entry.get())
+        self._entry = tk_utils.ValidatingEntry(
+            parent, self.data_string(data),
+            validate_function=validate,
+            disallowed_sequences=r'[^\d]'
+        )
+        self.setup()
 
-            return entry, get
+    def get_state(self):
+        if self.entry.get() is not None:
+            return int(self.entry.get())
 
-    return typing.cast(IntInRangeProtocol, IntInRange)
+    @property
+    def string_var(self) -> tk.StringVar:
+        return self._entry.string_var
+
+    @property
+    def entry(self) -> tk.Entry:
+        return self._entry
+
+    @property
+    def widget(self):
+        return self._entry
+
+
+def int_in_range(low, high, pad_digits=None) -> Type[ViewWrapper]:
+    _low, _high, _pad_digits = low, high, pad_digits
+
+    class _IntInRange(BaseIntInRange):
+        low = _low
+        high = _high
+        pad_digits = _pad_digits
+
+    class IntInRange(ViewWrapper):
+        wrapping_class = _IntInRange
+
+    return IntInRange
 
 
 @dataclass

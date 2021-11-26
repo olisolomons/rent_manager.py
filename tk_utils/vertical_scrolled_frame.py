@@ -10,12 +10,12 @@ class VerticalScrolledFrame(tk.Frame):
         super().__init__(parent, *args, **kw)
 
         # create a canvas object and a vertical scrollbar for scrolling it
-        vscrollbar = tk.Scrollbar(self, orient=tk.VERTICAL)
-        vscrollbar.pack(fill=tk.Y, side=tk.RIGHT, expand=tk.FALSE)
+        v_scrollbar = tk.Scrollbar(self, orient=tk.VERTICAL)
+        v_scrollbar.pack(fill=tk.Y, side=tk.RIGHT, expand=tk.FALSE)
         canvas = tk.Canvas(self, bd=0, highlightthickness=0,
-                           yscrollcommand=vscrollbar.set)
+                           yscrollcommand=v_scrollbar.set)
         canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=tk.TRUE)
-        vscrollbar.config(command=canvas.yview)
+        v_scrollbar.config(command=canvas.yview)
 
         # reset the view
         canvas.xview_moveto(0)

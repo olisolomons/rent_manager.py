@@ -1,23 +1,36 @@
-from dataclasses import dataclass
-
-from traits.core import EditableView
 import tkinter as tk
 
+from traits.core import ViewWrapper
+from traits.views.common.string_var_undo_manager import StringEditableView
 
-@dataclass
-class StringView(EditableView[str]):
-    data: str
 
-    def view(self, parent):
-        return tk.Label(parent, text=self.data)
+class _StringView(StringEditableView[str]):
+    @property
+    def string_var(self) -> tk.StringVar:
+        return self._string_var
 
-    def edit(self, parent):
-        string_var = tk.StringVar(value=self.data)
-        entry = tk.Entry(parent, textvariable=string_var)
+    @property
+    def entry(self) -> tk.Entry:
+        return self._entry
 
-        def get():
-            return string_var.get()
+    @staticmethod
+    def view(parent, data: str):
+        return tk.Label(parent, text=data)
 
-        string_var.trace('w', lambda *args: self.notify_changed())
+    def __init__(self, parent, data):
+        super().__init__()
+        self._string_var = tk.StringVar(value=data)
+        self._entry = tk.Entry(parent, textvariable=self._string_var)
 
-        return entry, get
+        self.setup()
+
+    def get_state(self):
+        return self._string_var.get()
+
+    @property
+    def widget(self):
+        return self._entry
+
+
+class StringView(ViewWrapper):
+    wrapping_class = _StringView

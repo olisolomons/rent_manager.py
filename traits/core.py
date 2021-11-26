@@ -3,56 +3,93 @@ import typing
 from dataclasses import dataclass, field
 from abc import ABC, abstractmethod
 import tkinter as tk
-from typing import TypeVar, Generic, Callable, Optional, Type
+from typing import TypeVar, Generic, Callable, Optional, Type, Any
 import inspect
 
 
 class View(ABC):
+    @staticmethod
     @abstractmethod
-    def view(self, parent) -> tk.Widget:
+    def view(parent, data):
         pass
-
-    def __call__(self, parent) -> tk.Widget:
-        return self.view(parent)
 
 
 T = TypeVar('T')
 U = TypeVar('U')
 
 
-@dataclass
-class EditableView(View, Generic[T]):
-    _editing: bool = field(default=False, init=False)
-    get_state: Optional[Callable[[], T]] = field(default=None, init=False)
-    change_listeners: set[Callable[[T], None]] = field(default_factory=set, init=False)
-
-    @property
-    def editing(self):
-        return self._editing
-
-    @editing.setter
-    def editing(self, _editing):
-        self._editing = _editing
-        if not _editing:
-            self.get_state = None
-
+class Action(Generic[U], ABC):
     @abstractmethod
-    def edit(self, parent) -> tuple[tk.Widget, Callable[[], T]]:
+    def do(self, view: U):
         pass
 
+    @abstractmethod
+    def undo(self, view: U):
+        pass
+
+    def stack(self, other: 'Action') -> 'Optional[Action]':
+        pass
+
+
+Act = TypeVar('Act', bound=Action)
+
+
+@dataclass
+class EditableView(Generic[T, Act], View):
+    change_listeners: set[Callable[[Act], None]] = field(default_factory=set, init=False)
+
     def __call__(self, parent) -> tk.Widget:
+        return self.widget
+
+    @property
+    @abstractmethod
+    def widget(self):
+        pass
+
+    @abstractmethod
+    def get_state(self) -> T:
+        pass
+
+    def action(self, action: Act):
+        for change_listener in self.change_listeners:
+            change_listener(action)
+
+        action.do(self)
+
+
+class ViewWrapper(Generic[T]):
+    wrapping_class: Type[EditableView] = None
+
+    def __init__(self, data: T, editing=False):
+        if self.wrapping_class is None:
+            raise TypeError('ViewWrapper should be initialised via a subclass with the `wrapping_class` field set')
+
+        self.editing = editing
+        self.data: T = data
+        self.wrapped_view: Optional[EditableView[T, Any]] = None
+
+    def __call__(self, parent: tk.Misc) -> tk.Widget:
         if self.editing:
-            widget, self.get_state = self.edit(parent)
-
-            return widget
+            wrapped_constructor = typing.cast(Callable[[tk.Misc, T], EditableView], self.wrapping_class)
+            self.wrapped_view = wrapped_constructor(parent, self.data)
+            return self.wrapped_view.widget
         else:
-            return self.view(parent)
+            return self.wrapping_class.view(parent, self.data)
 
-    def notify_changed(self) -> None:
-        new_state = self.get_state()
-        if new_state:
-            for change_listener in self.change_listeners:
-                change_listener(new_state)
+    def get_state(self) -> Optional[T]:
+        if self.wrapped_view is None:
+            return self.data
+        else:
+            return self.wrapped_view.get_state()
+
+    @property
+    def change_listeners(self) -> Optional[set[Callable[[Act], None]]]:
+        if self.wrapped_view is not None:
+            return self.wrapped_view.change_listeners
+
+    @classmethod
+    def is_editable(cls):
+        return issubclass(cls.wrapping_class, EditableView)
 
 
 @dataclass
@@ -61,59 +98,88 @@ class ViewableRecord(ABC):
     def configure(self, *args, **kwargs):
         pass
 
-    def view(self) -> EditableView:
-        return RecordView(self)
+    def view(self, *, editing=False) -> ViewWrapper:
+        return RecordView(self, editing)
 
 
 @dataclass
-class RecordView(EditableView[T]):
-    data: ViewableRecord
+class RecordAction(Action):
+    inner_action: Action
+    field: str
 
-    def edit(self, parent) -> tuple[tk.Widget, Callable[[], T]]:
-        field_views = self.make_field_views()
-        for view in field_views.values():
-            if hasattr(view, 'editing'):
-                view = typing.cast(EditableView, view)
-                view.editing = True
-                view.change_listeners.add(lambda s: self.notify_changed())
+    def do(self, view: '_RecordView'):
+        self.inner_action.do(view.field_views[self.field].wrapped_view)
 
-        def get():
-            results = {
-                field: editable_view.get_state()
-                for field, view in field_views.items()
-                if hasattr(view, 'editing')
-                for editable_view in (typing.cast(EditableView, view),)
-                if editable_view.get_state
-            }
-            if all(result is not None for result in results.values()):
-                return dataclasses.replace(self.data, **results)
+    def undo(self, view: '_RecordView'):
+        self.inner_action.undo(view.field_views[self.field].wrapped_view)
+
+
+class _RecordView(EditableView[T, RecordAction]):
+    @classmethod
+    def view(cls, parent, data: ViewableRecord) -> tk.Widget:
+        field_views = cls.make_field_views(data)
 
         frame = tk.Frame(parent)
-        self.data.configure(frame, **field_views), get
-        return frame, get
-
-    def view(self, parent) -> tk.Widget:
-        field_views = self.make_field_views()
-
-        frame = tk.Frame(parent)
-        self.data.configure(frame, **field_views)
+        data.configure(frame, **field_views)
         return frame
 
-    def make_field_views(self) -> dict[str, View]:
-        sig = inspect.signature(self.data.configure)
+    @classmethod
+    def make_field_views(cls, data: ViewableRecord) -> dict[str, ViewWrapper]:
+        sig = inspect.signature(data.configure)
         return {
-            field: self.make_field_view(field, sig)
+            field: cls.make_field_view(data, field, sig)
             for field in list(sig.parameters)[1:]
         }
 
-    def make_field_view(self, field, sig):
+    @classmethod
+    def make_field_view(cls, data, field, sig):
         annotation = sig.parameters[field].annotation
-        field_value = getattr(self.data, field)
+        field_value = getattr(data, field)
 
         if annotation is EditableView:
             return field_value.view()
         else:
             return annotation(field_value)
+
+    def __init__(self, parent, data):
+        super().__init__()
+
+        self.field_views = self.make_field_views(data)
+        for view in self.field_views.values():
+            if view.is_editable():
+                view.editing = True
+
+        self.frame = tk.Frame(parent)
+        data.configure(self.frame, **self.field_views)
+
+        for field, view in self.field_views.items():
+            if view.is_editable():
+                view.change_listeners.add(lambda action, field=field: self.on_change(RecordAction(action, field)))
+
+        self.data = data
+
+    def get_state(self) -> T:
+        results = {
+            field: editable_view.get_state()
+            for field, view in self.field_views.items()
+            if hasattr(view, 'editing')
+            for editable_view in (typing.cast(EditableView, view),)
+            if editable_view.get_state
+        }
+        if all(result is not None for result in results.values()):
+            return dataclasses.replace(self.data, **results)
+
+    @property
+    def widget(self):
+        return self.frame
+
+    def on_change(self, action: RecordAction):
+        for change_listener in self.change_listeners:
+            change_listener(action)
+
+
+class RecordView(ViewWrapper):
+    wrapping_class = _RecordView
 
 
 class Isomorphism(ABC, Generic[T, U]):
@@ -128,23 +194,44 @@ class Isomorphism(ABC, Generic[T, U]):
         pass
 
 
-def iso_view(iso: Type[Isomorphism[T, ViewableRecord]]) -> Type[EditableView[T]]:
-    class IsoView(EditableView[T]):
-        def __init__(self, data):
+def iso_view(iso: Type[Isomorphism[T, ViewableRecord]]) -> Type[ViewWrapper]:
+    @dataclass
+    class IsoAction(Action):
+        inner_action: Action
+
+        def do(self, view: '_IsoView'):
+            self.inner_action.do(view.inner_view.wrapped_view)
+
+        def undo(self, view: '_IsoView'):
+            self.inner_action.undo(view.inner_view.wrapped_view)
+
+    class _IsoView(EditableView[T, IsoAction]):
+        def __init__(self, parent, data):
             super().__init__()
-            self.inner_view: ViewableRecord = iso.to(data)
+            self.data: ViewableRecord = iso.to(data)
+            self.inner_view = self.data.view(editing=True)
+            self._widget = self.inner_view(parent)
+            self.inner_view.change_listeners.add(self.on_change)
 
-        def edit(self, parent) -> tuple[tk.Widget, Callable[[], T]]:
-            widget, get_state = self.inner_view.view().edit(parent)
+        def on_change(self, action: Action):
+            for change_listener in self.change_listeners:
+                change_listener(IsoAction(action))
 
-            def get():
-                state = get_state()
-                if state is not None:
-                    return iso.from_(state)
+        @property
+        def widget(self):
+            return self.inner_view.wrapped_view.widget
 
-            return widget, get
+        def get_state(self) -> T:
+            state = self.inner_view.get_state()
+            if state is not None:
+                return iso.from_(state)
 
-        def view(self, parent) -> tk.Widget:
-            return self.inner_view.view().view(parent)
+        @staticmethod
+        def view(parent, data) -> tk.Widget:
+            inner_view: ViewableRecord = iso.to(data)
+            return inner_view.view()(parent)
+
+    class IsoView(ViewWrapper):
+        wrapping_class = _IsoView
 
     return IsoView

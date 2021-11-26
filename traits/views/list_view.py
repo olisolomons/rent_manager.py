@@ -1,6 +1,6 @@
 from abc import ABC
 
-from traits.core import EditableView, RecordView, ViewWrapper, Action, U
+from traits.core import EditableView, RecordView, ViewWrapper, Action
 
 import tkinter as tk
 from tkinter import messagebox
@@ -98,6 +98,12 @@ class ListItemInnerAction(ListChangeAction):
         view: EditableView = item_record.view.wrapped_view
         self.inner_action.undo(view)
 
+    def stack(self, other: 'Action') -> 'Optional[Action]':
+        other = typing.cast(ListItemInnerAction, other)
+        if self.id_ == other.id_:
+            return self.checked_stack(self, other, 'inner_action',
+                                      lambda a: ListItemInnerAction(self.id_, a))
+
 
 @dataclass
 class ListItemSave(ListChangeAction):
@@ -167,12 +173,39 @@ class ListItemEdit(ListChangeAction):
 @dataclass
 class ListItemSwapWithBelow(ListChangeAction):
     id_: int
+    below_id: int
+    previous_stacked: 'Optional[ListItemSwapWithBelow]' = None
+    stop_dragging: bool = False
 
     def do(self, view: '_ListView'):
-        view.swap_with_below(view.nodes[self.id_])
+        if self.id_ == self.below_id:
+            return
+        actions = []
+        action = self
+        while action:
+            actions.append(action)
+            action = action.previous_stacked
+
+        for action in reversed(actions):
+            view.swap_with_below(view.nodes[action.id_])
 
     def undo(self, view: '_ListView'):
-        view.swap_with_below(view.nodes[self.id_].previous_item)
+        if self.id_ == self.below_id:
+            return
+        action = self
+        while action:
+            view.swap_with_below(view.nodes[action.id_].previous_item)
+            action = action.previous_stacked
+
+    def stack(self, other: 'Action') -> 'Optional[Action]':
+        other = typing.cast(ListItemSwapWithBelow, other)
+        if other.stop_dragging:
+            return dataclasses.replace(self, stop_dragging=True)
+        if not self.stop_dragging and self.items_set().intersection(other.items_set()):
+            return dataclasses.replace(other, previous_stacked=self)
+
+    def items_set(self):
+        return {self.id_, self.below_id}
 
 
 class _ListView(Generic[T], EditableView[list[T], ListChangeAction]):
@@ -235,6 +268,7 @@ class _ListView(Generic[T], EditableView[list[T], ListChangeAction]):
             if self.dragged_item:
                 self.dragged_item.frame.config(highlightthickness=0)
                 self.dragged_item = None
+                self.action(ListItemSwapWithBelow(0, 0, stop_dragging=True))
 
         self.list_frame.interior.bind_all('<ButtonRelease-1>', stop_dragging, add='+')
 
@@ -316,7 +350,7 @@ class _ListView(Generic[T], EditableView[list[T], ListChangeAction]):
             grid_row = previous_item.grid_row + 1
         item_record = ListItemRecord(
             item_func, item_frame, grid_row,
-            next_item=self.dummy_last_item, previous_item=previous_item,
+            next_item=previous_item.next_item, previous_item=previous_item,
             id_=id_, item_widget=item, edit_button=edit_button
         )
         previous_item.next_item.previous_item = item_record
@@ -359,7 +393,7 @@ class _ListView(Generic[T], EditableView[list[T], ListChangeAction]):
             else:
                 break
 
-            self.action(ListItemSwapWithBelow(swap1.id_))
+            self.action(ListItemSwapWithBelow(swap1.id_, swap1.next_item.id_))
 
     @staticmethod
     def swap_with_below(node: ListItemRecord):

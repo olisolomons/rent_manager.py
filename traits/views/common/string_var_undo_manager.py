@@ -1,6 +1,6 @@
 from abc import abstractmethod
 from dataclasses import dataclass
-from typing import TypeVar, Generic
+from typing import TypeVar, Generic, Optional
 
 from traits.core import EditableView, Action, U
 import tkinter as tk
@@ -9,10 +9,9 @@ import tkinter as tk
 @dataclass
 class StringChangeAction(Action):
     new_state: str
-
     old_state: str
-    new_cursor: int
 
+    new_cursor: int
     old_cursor: int
 
     def do(self, view: 'StringEditableView'):
@@ -21,6 +20,12 @@ class StringChangeAction(Action):
 
     def undo(self, view: 'StringEditableView'):
         view.undo_manager.set(self.old_state, self.old_cursor)
+
+    def stack(self, other: 'StringChangeAction') -> 'Optional[StringChangeAction]':
+        return StringChangeAction(
+            other.new_state, self.old_state,
+            other.new_cursor, self.old_cursor
+        )
 
 
 @dataclass

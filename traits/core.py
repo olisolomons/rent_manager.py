@@ -30,6 +30,16 @@ class Action(Generic[U], ABC):
     def stack(self, other: 'Action') -> 'Optional[Action]':
         pass
 
+    @classmethod
+    def checked_stack(cls, a: 'Action', b: 'Action',
+                      field: str,
+                      func: 'Callable[[Action],Action]') -> 'Optional[Action]':
+        a_inner, b_inner = getattr(a, field), getattr(b, field)
+        if type(a_inner) == type(b_inner):
+            stacked = a_inner.stack(b_inner)
+            if stacked is not None:
+                return func(stacked)
+
 
 Act = TypeVar('Act', bound=Action)
 
@@ -112,6 +122,11 @@ class RecordAction(Action):
 
     def undo(self, view: '_RecordView'):
         self.inner_action.undo(view.field_views[self.field].wrapped_view)
+
+    def stack(self, other: 'Action') -> 'Optional[Action]':
+        other = typing.cast(RecordAction, other)
+        if self.field == other.field:
+            return self.checked_stack(self, other, 'inner_action', lambda a: RecordAction(a, self.field))
 
 
 class _RecordView(EditableView[T, RecordAction]):
@@ -204,6 +219,10 @@ def iso_view(iso: Type[Isomorphism[T, ViewableRecord]]) -> Type[ViewWrapper]:
 
         def undo(self, view: '_IsoView'):
             self.inner_action.undo(view.inner_view.wrapped_view)
+
+        def stack(self, other: 'IsoAction') -> 'Optional[IsoAction]':
+            other = typing.cast(IsoAction, other)
+            return self.checked_stack(self, other, 'inner_action', IsoAction)
 
     class _IsoView(EditableView[T, IsoAction]):
         def __init__(self, parent, data):

@@ -74,7 +74,7 @@ class ViewWrapper(Generic[T]):
         if self.wrapping_class is None:
             raise TypeError('ViewWrapper should be initialised via a subclass with the `wrapping_class` field set')
 
-        self.editing = editing
+        self.editing = editing if self.is_editable() else False
         self.data: T = data
         self.wrapped_view: Optional[EditableView[T, Any]] = None
 
@@ -168,7 +168,7 @@ class _RecordView(EditableView[T, RecordAction]):
         data.configure(self.frame, **self.field_views)
 
         for field, view in self.field_views.items():
-            if view.is_editable():
+            if view.is_editable() and view.change_listeners is not None:
                 view.change_listeners.add(lambda action, field=field: self.on_change(RecordAction(action, field)))
 
         self.data = data

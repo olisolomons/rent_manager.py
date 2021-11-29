@@ -1,6 +1,4 @@
-from dataclasses import dataclass
-
-from traits.core import EditableView, Act, T, ViewWrapper
+from traits.core import ViewWrapper
 import tkinter as tk
 
 from tk_utils import ValidatingEntry
@@ -38,7 +36,6 @@ class _CurrencyView(StringEditableView[int]):
         self._entry.grid(row=0, column=1, sticky='EW')
 
         self.setup()
-
 
     @property
     def string_var(self) -> tk.StringVar:

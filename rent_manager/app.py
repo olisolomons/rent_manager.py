@@ -138,6 +138,7 @@ class RentManagerApp(DocumentManager):
             return False
 
         result = unsaved_changes_dialog(self.frame.winfo_toplevel())
+        # noinspection PyPep8Naming
         Res = UnsavedChangesResult
         if result is Res.Save:
             self.save()

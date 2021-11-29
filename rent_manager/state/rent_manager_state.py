@@ -10,6 +10,7 @@ from traits.views import ListView, list_view
 
 from .other_transaction import OtherTransaction, TransactionReason
 from .rent_payment import RentPayment
+from traits.header import header
 
 
 def new_other_transaction(frame: tk.Frame, add: Callable[[OtherTransaction], None]) -> tk.Widget:
@@ -27,7 +28,7 @@ def new_other_transaction(frame: tk.Frame, add: Callable[[OtherTransaction], Non
 
 
 RentPaymentsView = list_view(
-    add_button_widget_func=ListView[RentPayment].add_button(lambda: RentPayment(0, date.today()))
+    add_button_widget_func=ListView[RentPayment].add_button(lambda: RentPayment(0, date.today(), date.today()))
 )
 OtherTransactionsView = list_view(add_button_widget_func=new_other_transaction)
 
@@ -41,9 +42,11 @@ class RentManagerState(ViewableRecord):
     def configure(parent: tk.Frame,
                   rent_payments: RentPaymentsView,
                   other_transactions: OtherTransactionsView):
-        rent_payments(parent).grid(row=0, column=0, sticky=tk_utils.STICKY_ALL)
-        other_transactions(parent).grid(row=0, column=1, sticky=tk_utils.STICKY_ALL)
+        header(parent, RentPayment).grid(row=0, column=0, sticky=tk_utils.STICKY_ALL)
+        rent_payments(parent).grid(row=1, column=0, sticky=tk_utils.STICKY_ALL)
+        header(parent, OtherTransaction).grid(row=0, column=1, sticky=tk_utils.STICKY_ALL)
+        other_transactions(parent).grid(row=1, column=1, sticky=tk_utils.STICKY_ALL)
 
-        parent.grid_rowconfigure(0, weight=1)
+        parent.grid_rowconfigure(1, weight=1)
         parent.grid_columnconfigure(0, weight=1, uniform='rent_manager')
         parent.grid_columnconfigure(1, weight=1, uniform='rent_manager')

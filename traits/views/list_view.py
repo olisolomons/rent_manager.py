@@ -212,6 +212,8 @@ class _ListView(Generic[T], EditableView[list[T], ListChangeAction]):
     _item_view_func: Callable[[T], ViewWrapper] = RecordView
     _add_button_widget_func: Callable[[tk.Frame, Callable[[T], None]], tk.Widget] = None
 
+    buttons_width = 100
+
     @property
     def widget(self):
         return self.frame
@@ -308,14 +310,18 @@ class _ListView(Generic[T], EditableView[list[T], ListChangeAction]):
         item = item_func(item_frame)
 
         self.place_item(item)
-
         item_frame.grid_columnconfigure(1, weight=1)
+
+        buttons_frame = tk.Frame(item_frame)
+        buttons_frame.grid(row=0, column=2)
+        item_frame.grid_columnconfigure(2, minsize=self.buttons_width, weight=0)
+
         edit_button = None
 
         if self.editable:
-            edit_button = tk.Button(item_frame, text="Save" if item_func.editing else "Edit",
+            edit_button = tk.Button(buttons_frame, text="Save" if item_func.editing else "Edit",
                                     command=lambda: self.edit_item(item_record))
-            edit_button.grid(row=0, column=2)
+            edit_button.grid(row=0, column=0)
 
             move_arrow = tk.Label(item_frame, text='↕', cursor='fleur')
             move_arrow.grid(row=0, column=0)
@@ -339,10 +345,10 @@ class _ListView(Generic[T], EditableView[list[T], ListChangeAction]):
                     ))
 
             delete_button = tk.Button(
-                item_frame, text='X',
+                buttons_frame, text='X',
                 command=delete_function
             )
-            delete_button.grid(row=0, column=3)
+            delete_button.grid(row=0, column=1)
 
         if previous_item is None:
             previous_item = self.dummy_last_item.previous_item

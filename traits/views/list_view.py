@@ -218,8 +218,13 @@ class _ListView(Generic[T], EditableView[list[T], ListChangeAction]):
     def widget(self):
         return self.frame
 
-    def get_state(self) -> list[T]:
-        return [item.get_state() for item in self.iter_items()]
+    def get_state(self) -> Optional[list[T]]:
+        item: ViewWrapper
+        items = [item.get_state() for item in self.iter_items()]
+        if any(item is None for item in items):
+            return
+        else:
+            return items
 
     @staticmethod
     def view(parent, data):
@@ -286,6 +291,10 @@ class _ListView(Generic[T], EditableView[list[T], ListChangeAction]):
         def on_change(action):
             item_record.actions_log.append(action)
             self.action(ListItemInnerAction(item_record.id_, action))
+            if item_record.view.get_state() is None:
+                item_record.edit_button.config(state=tk.DISABLED)
+            else:
+                item_record.edit_button.config(state=tk.NORMAL)
 
         item_record.view.change_listeners.add(on_change)
 

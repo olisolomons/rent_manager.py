@@ -1,7 +1,6 @@
 import tkinter as tk
 
 from rent_manager.app import RentManagerApp
-from rent_manager.menu import RentManagerMenu
 
 
 def main() -> None:
@@ -9,10 +8,12 @@ def main() -> None:
 
     root = tk.Tk()
     root.geometry(f'{w}x{h}')
+    root.title('Rent Manager')
+
     app = RentManagerApp(root)
     app.frame.pack(fill=tk.BOTH, expand=True)
 
-    root.config(menu=RentManagerMenu(root, app))
+    root.config(menu=app.menu(root))
 
     root.mainloop()
 

@@ -6,14 +6,15 @@ import enum
 
 import tkinter as tk
 from tkinter import filedialog
-from tkinter import simpledialog
+from tkinter import simpledialog, dialog
 
 import dataclass_json
 import tk_utils
 from traits.core import ViewWrapper
 from traits.undo_manager import UndoManager
 from . import config
-from .menu import DocumentManager
+from .menu import DocumentManager, BasicEditorMenu
+from .state.rent_arrangement_data import RentArrangementData
 
 from .state.rent_manager_state import RentManagerState
 
@@ -51,6 +52,9 @@ class RentManagerApp(DocumentManager):
         self.w: tk.Widget = None
         # noinspection PyTypeChecker
         self.undo_manager: UndoManager = None
+        # noinspection PyTypeChecker
+        self.data: RentManagerState = None
+
         self.populate_from_data(RentManagerState())
 
         self.bind_key(self.save)
@@ -63,10 +67,21 @@ class RentManagerApp(DocumentManager):
 
         self._config = config.load()
 
+        rent_manager_self = self
+
+        class RentManagerMenu(BasicEditorMenu):
+            def __init__(self, parent):
+                super().__init__(parent, rent_manager_self)
+
+                self.edit.add_command(label='Edit rent arrangements', command=rent_manager_self.edit_rent_arrangements)
+
+        self.menu = RentManagerMenu
+
     def populate_from_data(self, data: RentManagerState):
         self.changed = False
+        self.data = data
 
-        self.view = data.view(editing=True)
+        self.view = data.rent_manager_main_state.view(editing=True)
         self.w = self.view(self._frame)
 
         self.view.change_listeners.add(self.on_change)
@@ -122,7 +137,7 @@ class RentManagerApp(DocumentManager):
         if self.file_path is None:
             self.save_as()
         else:
-            state = self.view.get_state()
+            state = dataclasses.replace(self.data, rent_manager_main_state=self.view.get_state())
             with open(self.file_path, 'w') as f:
                 dataclass_json.dump(state, f)
             self.changed = False
@@ -172,9 +187,13 @@ class RentManagerApp(DocumentManager):
         if cancelled:
             return
 
+        rent_arrangements = self.rent_arrangements_dialog(RentArrangementData(), 'Rent Arrangements for New Document')
+        if rent_arrangements is None:
+            return
+
         self.w.destroy()
 
-        self.populate_from_data(RentManagerState())
+        self.populate_from_data(RentManagerState(rent_arrangement_data=rent_arrangements))
 
         self.file_path: Optional[str] = None
 
@@ -183,3 +202,63 @@ class RentManagerApp(DocumentManager):
 
     def redo(self):
         self.undo_manager.redo()
+
+    def rent_arrangements_dialog(self, rent_arrangements: RentArrangementData, title: str):
+        root = self._frame.winfo_toplevel()
+
+        class EditArrangementsDialog(simpledialog.Dialog):
+            def __init__(self):
+                # noinspection PyTypeChecker
+                self.view: ViewWrapper = None
+                # noinspection PyTypeChecker
+                self.button: tk.Button = None
+                super().__init__(root, title)
+                self.cancelled = False
+
+            def on_change(self, action):
+                if self.view.get_state() is None:
+                    self.button.config(state=tk.DISABLED)
+                else:
+                    self.button.config(state=tk.NORMAL)
+
+            def body(self, master):
+                self.view = rent_arrangements.view(editing=True)
+                w = self.view(master)
+                w.pack(fill=tk.BOTH)
+
+            def buttonbox(self):
+                box = tk.Frame(self)
+
+                self.button = tk.Button(box, text="Save", command=self.ok)
+                self.button.pack(side=tk.LEFT, padx=5, pady=5)
+                w = tk.Button(box, text="Cancel", command=self.cancel)
+                w.pack(side=tk.LEFT, padx=5, pady=5)
+
+                self.bind("<Return>", self.ok)
+                self.bind("<Escape>", self.cancel)
+
+                self.view.change_listeners.add(self.on_change)
+
+                box.pack()
+
+            def validate(self):
+                return self.view.get_state() is not None
+
+            def cancel(self, event=None):
+                super().cancel()
+                self.cancelled = True
+
+            def get_state(self):
+                if self.cancelled:
+                    return
+                else:
+                    return self.view.get_state()
+
+        return EditArrangementsDialog().get_state()
+
+    def edit_rent_arrangements(self):
+        new_rent_arrangement_data = self.rent_arrangements_dialog(self.data.rent_arrangement_data,
+                                                                  'Edit Rent Arrangements')
+        if new_rent_arrangement_data is not None:
+            self.data.rent_arrangement_data = new_rent_arrangement_data
+            self.changed = True

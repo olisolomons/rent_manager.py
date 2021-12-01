@@ -31,7 +31,7 @@ class _CurrencyView(StringEditableView[int]):
         self._entry = ValidatingEntry(
             self.frame, self.data_string(data),
             validate_function=lambda s: bool(valid_pattern.match(s)),
-            disallowed_sequences=r'[^\d.-]'
+            disallowed_sequences=r'[^\d.\-]'
         )
         self._entry.grid(row=0, column=1, sticky='EW')
 

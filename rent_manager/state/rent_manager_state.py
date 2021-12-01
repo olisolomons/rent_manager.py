@@ -2,13 +2,13 @@ import tkinter as tk
 from typing import Callable, Type
 from datetime import date
 from dataclasses import dataclass, field
-from functools import partial
 
 import tk_utils
 from tk_utils.horizontal_scrolled_group import HorizontalScrolledGroup
 from traits.core import ViewableRecord
 from traits.views import ListView, list_view
 
+from .rent_arrangement_data import RentArrangementData
 from .other_transaction import OtherTransaction, TransactionReason, other_transaction_scrolled
 from .rent_payment import RentPayment
 from traits.header import header
@@ -44,7 +44,7 @@ RentPaymentsView = list_view(
 
 
 @dataclass
-class RentManagerState(ViewableRecord):
+class RentManagerMainState(ViewableRecord):
     rent_payments: list[RentPayment] = field(default_factory=list)
     other_transactions: list[OtherTransaction] = field(default_factory=list)
 
@@ -64,3 +64,9 @@ class RentManagerState(ViewableRecord):
         parent.grid_rowconfigure(1, weight=1)
         parent.grid_columnconfigure(0, weight=1, uniform='rent_manager')
         parent.grid_columnconfigure(1, weight=1, uniform='rent_manager')
+
+
+@dataclass
+class RentManagerState:
+    rent_manager_main_state: RentManagerMainState = field(default_factory=RentManagerMainState)
+    rent_arrangement_data: RentArrangementData = field(default_factory=RentArrangementData)

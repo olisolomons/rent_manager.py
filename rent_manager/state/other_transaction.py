@@ -20,7 +20,7 @@ class TransactionReason(enum.Enum):
 class _ReasonView(View):
     @staticmethod
     def view(parent, data: TransactionReason):
-        return tk.Label(parent, text=f'{data.name}: ')
+        return tk.Label(parent, text=f'{data.name}')
 
 
 class ReasonView(ViewWrapper):

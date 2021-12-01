@@ -29,16 +29,23 @@ class BaseIntInRange(StringEditableView):
         self.extra_validate: Optional[Callable[[str], bool]] = None
 
         def validate(s):
-            return len(s) > 0 and (self.low <= int(s) <= self.high) and (
-                self.extra_validate(s) if self.extra_validate else True
-            )
+            try:
+                return len(s) > 0 and (self.low <= float(s) <= self.high) and (
+                    self.extra_validate(s) if self.extra_validate else True
+                )
+            except ValueError:
+                return False
 
         self._entry = tk_utils.ValidatingEntry(
             parent, self.data_string(data),
             validate_function=validate,
-            disallowed_sequences=r'[^\d]'
+            disallowed_sequences=self.disallowed_sequences()
         )
         self.setup()
+
+    @staticmethod
+    def disallowed_sequences():
+        return r'[^\d]'
 
     def get_state(self):
         if self.entry.get() is not None:

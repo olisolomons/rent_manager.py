@@ -28,18 +28,18 @@ class DocumentManager(ABC):
         pass
 
 
-class RentManagerMenu(tk.Menu):
+class BasicEditorMenu(tk.Menu):
     def __init__(self, parent, document_manager: DocumentManager):
         super().__init__(parent)
 
-        file_menu = tk.Menu(self)
+        file_menu = self.file_menu = tk.Menu(self, tearoff=False)
         self.add_cascade(label='File', menu=file_menu)
         file_menu.add_command(label='New', command=document_manager.new)
         file_menu.add_command(label='Open', command=document_manager.open)
         file_menu.add_command(label='Save', command=document_manager.save)
         file_menu.add_command(label='Save as', command=document_manager.save_as)
 
-        edit = tk.Menu(self)
+        edit = self.edit = tk.Menu(self, tearoff=False)
         self.add_cascade(label='Edit', menu=edit)
         edit.add_command(label='Undo', command=document_manager.undo)
         edit.add_command(label='Redo', command=document_manager.redo)

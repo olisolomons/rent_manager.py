@@ -2,8 +2,10 @@ import tkinter as tk
 import enum
 from dataclasses import dataclass
 from datetime import date
+from typing import Type
 
 from tk_utils import Spacer
+from tk_utils.horizontal_scrolled_group import HorizontalScrolledGroup
 from traits.core import ViewableRecord, EditableView, View, ViewWrapper
 from traits.header import HasHeader
 from traits.views import CurrencyView, StringView, DateView
@@ -41,15 +43,30 @@ class OtherTransaction(HasHeader):
     comment: str
     _date: date
 
-    @staticmethod
-    def configure(parent: tk.Frame, amount: CurrencyView, comment: StringView, _date: DateView, reason: ReasonView):
+    @classmethod
+    def configure(cls, parent: tk.Frame, amount: CurrencyView, comment: StringView,
+                  _date: DateView, reason: ReasonView):
         editing = amount.editing if hasattr(amount, 'editing') else False
         if not editing:
+            if hasattr(cls, 'comments_scroll_group'):
+                old_comment=comment
+                class FramedComment:
+                    def __init__(self, parent):
+                        comments_scroll_group: HorizontalScrolledGroup = cls.comments_scroll_group
+                        self.item = comments_scroll_group.add_frame(parent)
+                        self.item.interior.config(bg='red')
+                        old_comment(self.item.interior).pack(fill=tk.BOTH, anchor=tk.N+tk.W)
+
+                    def grid(self, **kwargs):
+                        self.item.canvas.grid(**kwargs)
+
+                comment = FramedComment
+
             items = [
-                (reason, 1),
-                (amount, 1),
-                (_date, 1),
-                (comment, 1),
+                (reason, 2),
+                (amount, 2),
+                (_date, 3),
+                (comment, 4),
             ]
             is_first = True
             for i, (item, weight) in enumerate(items):
@@ -77,3 +94,10 @@ class OtherTransaction(HasHeader):
             grid('Date:', _date(parent))
             if reason.data != TransactionReason.Payment:
                 grid('Comment:', comment(parent))
+
+
+def other_transaction_scrolled(scroll_group: HorizontalScrolledGroup) -> Type[OtherTransaction]:
+    class OtherTransactionScrolled(OtherTransaction):
+        comments_scroll_group = scroll_group
+
+    return OtherTransactionScrolled

@@ -133,20 +133,35 @@ class RentManagerApp(DocumentManager):
         else:
             return None
 
-    def save(self):
+    def get_save_state(self):
+        view_state = self.view.get_state()
+        if view_state is None:
+            simpledialog.messagebox.showerror('Cannot save',
+                                              'Please finish entering all data before saving the document')
+        return view_state
+
+    def save(self, state=None):
+        if state is None:
+            state = self.get_save_state()
+        if state is None:
+            return
         if self.file_path is None:
-            self.save_as()
+            self.save_as(state)
         else:
-            state = dataclasses.replace(self.data, rent_manager_main_state=self.view.get_state())
+            state = dataclasses.replace(self.data, rent_manager_main_state=state)
             with open(self.file_path, 'w') as f:
                 dataclass_json.dump(state, f)
             self.changed = False
 
-    def save_as(self):
+    def save_as(self, state=None):
+        if state is None:
+            state = self.get_save_state()
+        if state is None:
+            return
         file_path = self.filedialog(filedialog.asksaveasfilename)
         if file_path is not None:
             self.file_path = file_path
-            self.save()
+            self.save(state)
 
     def prompt_unsaved_changes(self):
         if not self.changed:

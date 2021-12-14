@@ -15,12 +15,19 @@ class TransactionReason(enum.Enum):
     Cost = enum.auto()
     Adjustment = enum.auto()
     Payment = enum.auto()
+    AgentFee = enum.auto()
+
+    def readable_name(self):
+        if self is TransactionReason.AgentFee:
+            return 'Agent Fee'
+        else:
+            return self.name
 
 
 class _ReasonView(View):
     @staticmethod
     def view(parent, data: TransactionReason):
-        return tk.Label(parent, text=f'{data.name}')
+        return tk.Label(parent, text=f'{data.readable_name()}')
 
 
 class ReasonView(ViewWrapper):
@@ -49,13 +56,14 @@ class OtherTransaction(HasHeader):
         editing = amount.editing if hasattr(amount, 'editing') else False
         if not editing:
             if hasattr(cls, 'comments_scroll_group'):
-                old_comment=comment
+                old_comment = comment
+
                 class FramedComment:
                     def __init__(self, parent):
                         comments_scroll_group: HorizontalScrolledGroup = cls.comments_scroll_group
                         self.item = comments_scroll_group.add_frame(parent)
                         self.item.interior.config(bg='red')
-                        old_comment(self.item.interior).pack(fill=tk.BOTH, anchor=tk.N+tk.W)
+                        old_comment(self.item.interior).pack(fill=tk.BOTH, anchor=tk.N + tk.W)
 
                     def grid(self, **kwargs):
                         self.item.canvas.grid(**kwargs)

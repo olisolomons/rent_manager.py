@@ -16,7 +16,9 @@ from . import config
 from .menu import DocumentManager, BasicEditorMenu
 from .state.rent_arrangement_data import RentArrangementData
 
-from .state.rent_manager_state import RentManagerState
+from .state.rent_manager_state import RentManagerState, RentCalculations
+
+from threading import Timer
 
 
 class UnsavedChangesResult(enum.Enum):
@@ -55,6 +57,9 @@ class RentManagerApp(DocumentManager):
         # noinspection PyTypeChecker
         self.data: RentManagerState = None
 
+        self.calculation_timer: Optional[Timer] = None
+        self.calculation_results: Optional[RentCalculations] = None
+
         self.populate_from_data(RentManagerState())
 
         self.bind_key(self.save)
@@ -90,6 +95,10 @@ class RentManagerApp(DocumentManager):
 
         self.undo_manager = UndoManager.from_wrapper(self.view)
 
+        if self.calculation_timer is not None:
+            self.calculation_timer.cancel()
+        self.do_calculations()
+
     @property
     def config(self):
         return self._config
@@ -113,8 +122,21 @@ class RentManagerApp(DocumentManager):
     def frame(self) -> tk.Frame:
         return self._frame
 
-    def on_change(self, new_state):
+    def on_change(self, action):
         self.changed = True
+
+        if self.calculation_timer is not None:
+            self.calculation_timer.cancel()
+        self.calculation_timer = Timer(1.5, self.do_calculations)
+        self.calculation_timer.start()
+
+    def do_calculations(self):
+        data = self.view.get_state()
+        self.calculation_timer = None
+        if data is not None:
+            self.data.rent_manager_main_state = data
+            self.calculation_results = RentCalculations.from_rent_manager_state(self.data)
+            print(self.calculation_results)
 
     def filedialog(self, dialog):
         top = self.frame.winfo_toplevel()
@@ -214,6 +236,7 @@ class RentManagerApp(DocumentManager):
 
     def undo(self):
         self.undo_manager.undo()
+        # self.on_change(None)
 
     def redo(self):
         self.undo_manager.redo()
@@ -276,4 +299,4 @@ class RentManagerApp(DocumentManager):
                                                                   'Edit Rent Arrangements')
         if new_rent_arrangement_data is not None:
             self.data.rent_arrangement_data = new_rent_arrangement_data
-            self.changed = True
+            self.on_change(None)

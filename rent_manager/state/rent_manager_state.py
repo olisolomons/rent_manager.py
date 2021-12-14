@@ -22,11 +22,12 @@ class OtherTransactionMaker:
     def make_buttons(self, frame: tk.Frame, add: Callable[[OtherTransaction], None]) -> tk.Widget:
         buttons_frame = tk.Frame(frame)
         self.comments_scroll_group = HorizontalScrolledGroup(buttons_frame)
-        self.comments_scroll_group.scrollbar.grid(row=0, column=0, columnspan=3, sticky=tk.E + tk.W)
+        self.comments_scroll_group.scrollbar.grid(row=0, column=0, columnspan=4, sticky=tk.E + tk.W)
         for i, reason in enumerate(TransactionReason):
+            name = reason.readable_name().lower()
             button = tk.Button(
                 buttons_frame,
-                text=f'Add {reason.name.lower()}',
+                text=f'Add {name}',
                 command=lambda reason=reason: add(self.other_transaction_class(reason, 0, '', date.today()))
             )
             button.grid(row=1, column=i, sticky='EW')
@@ -70,3 +71,52 @@ class RentManagerMainState(ViewableRecord):
 class RentManagerState:
     rent_manager_main_state: RentManagerMainState = field(default_factory=RentManagerMainState)
     rent_arrangement_data: RentArrangementData = field(default_factory=RentArrangementData)
+
+
+@dataclass
+class RentCalculations:
+    rent_for_months: list[tuple[date, int]]
+    arrears: int
+    unclaimed_commission: int
+    balance: int
+
+    @classmethod
+    def from_rent_manager_state(cls, rent_manager_state: RentManagerState):
+        start_date = rent_manager_state.rent_arrangement_data.start_date
+        months_since_start = date.today().month - start_date.month + 12 * (date.today().year - start_date.year)
+        if date.today().day >= start_date.day:
+            months_since_start += 1
+        rent_for_months = {
+            date(
+                start_date.year + (start_date.month + month - 1) // 12,
+                (start_date.month + month - 1) % 12 + 1,
+                1
+            ): 0
+            for month in range(months_since_start)
+        }
+
+        for rent_payment in rent_manager_state.rent_manager_main_state.rent_payments:
+            rent_for_months[rent_payment.for_month] += rent_payment.amount
+
+        total_rent_received = sum(
+            rent_payment.amount
+            for rent_payment in rent_manager_state.rent_manager_main_state.rent_payments
+        )
+        total_rent_due = months_since_start * rent_manager_state.rent_arrangement_data.monthly_rent
+        total_commission_due = int(total_rent_received * rent_manager_state.rent_arrangement_data.agents_fee / 100)
+        claimed_commission = sum(
+            transaction.amount
+            for transaction in rent_manager_state.rent_manager_main_state.other_transactions
+            if transaction.reason is TransactionReason.AgentFee
+        )
+        total_costs = sum(
+            transaction.amount
+            for transaction in rent_manager_state.rent_manager_main_state.other_transactions
+        )
+
+        return cls(
+            rent_for_months=list(rent_for_months.items()),
+            arrears=total_rent_due - total_rent_received,
+            unclaimed_commission=total_commission_due - claimed_commission,
+            balance=total_rent_received - total_costs
+        )

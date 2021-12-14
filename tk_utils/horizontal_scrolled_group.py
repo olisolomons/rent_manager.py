@@ -46,9 +46,7 @@ class HorizontalScrolledGroup:
                 self.smallest_bar_size_item = new_scrolled_item
             scrolled_item = new_scrolled_item
 
-            print(f'scrollbar_set({first}, {last})')
             if bar_size < self.smallest_bar_size:
-                print('smallest')
                 self.smallest_bar_size = bar_size
                 self.smallest_bar_size_item = scrolled_item
 

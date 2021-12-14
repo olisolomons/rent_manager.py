@@ -136,7 +136,6 @@ class RentManagerApp(DocumentManager):
         if data is not None:
             self.data.rent_manager_main_state = data
             self.calculation_results = RentCalculations.from_rent_manager_state(self.data)
-            print(self.calculation_results)
 
     def filedialog(self, dialog):
         top = self.frame.winfo_toplevel()

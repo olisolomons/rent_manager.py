@@ -1,12 +1,12 @@
 from abc import ABC
 
-from traits.core import EditableView, RecordView, ViewWrapper, Action
+from traits.core import EditableView, ViewWrapper, Action
 
 import tkinter as tk
 from tkinter import messagebox
 from tk_utils.vertical_scrolled_frame import VerticalScrolledFrame
 from tk_utils.complete_bind import complete_bind
-from typing import Generic, TypeVar, Optional, Callable, Type, Any
+from typing import Generic, TypeVar, Optional, Callable, Any
 import typing
 from dataclasses import dataclass
 import dataclasses
@@ -209,8 +209,8 @@ class ListItemSwapWithBelow(ListChangeAction):
 
 
 class _ListView(Generic[T], EditableView[list[T], ListChangeAction]):
-    _item_view_func: Callable[[T], ViewWrapper] = RecordView
-    _add_button_widget_func: Callable[[tk.Frame, Callable[[T], None]], tk.Widget] = None
+    item_view_func: Callable[[T], ViewWrapper] = None
+    add_button_widget_func: Callable[[tk.Frame, Callable[[T], None]], tk.Widget] = None
 
     buttons_width = 100
 
@@ -260,12 +260,12 @@ class _ListView(Generic[T], EditableView[list[T], ListChangeAction]):
         self.list_frame.interior.bind_all('<Motion>', self.on_motion, add='+')
 
         self.add_button = None
-        if self._add_button_widget_func:
+        if self.add_button_widget_func:
             def add(new_item: T):
                 self.action(ListItemCreate(self.next_id, new_item))
                 self.next_id += 1
 
-            self.add_button = type(self)._add_button_widget_func(self.frame, add)
+            self.add_button = type(self).add_button_widget_func(self.frame, add)
             self.add_button.pack(fill=tk.X)
 
         self.dragged_item: Optional[ListItemRecord[T]] = None
@@ -312,7 +312,11 @@ class _ListView(Generic[T], EditableView[list[T], ListChangeAction]):
 
     def add(self, data: T, id_: int, editing_item: bool = False,
             previous_item: ListItemRecord = None, grid_row: int = None):
-        item_func = self._item_view_func(data)
+        if self.item_view_func:
+            item_func = self.item_view_func(data)
+        else:
+            item_func = data.view()
+
         item_frame = tk.Frame(self.list_frame.interior, borderwidth=1, highlightbackground="blue")
         if self.editable and editing_item:
             item_func.editing = True
@@ -447,13 +451,9 @@ class ListView(ViewWrapper[list[T]], Generic[T]):
 
         return add_button_widget_func
 
+    def __call__(self, parent: tk.Misc, item_view_func=None, add_button_widget_func=None) -> tk.Widget:
+        return self._call_with_kwargs(parent, {
+            'item_view_func': item_view_func,
+            'add_button_widget_func': add_button_widget_func
+        })
 
-def list_view(item_view_func=RecordView, add_button_widget_func=None) -> Type[ViewWrapper]:
-    class _CustomListView(_ListView):
-        _item_view_func = item_view_func
-        _add_button_widget_func = add_button_widget_func
-
-    class CustomListView(ViewWrapper):
-        wrapping_class = _CustomListView
-
-    return CustomListView

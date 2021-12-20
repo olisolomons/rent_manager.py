@@ -1,11 +1,10 @@
 import tkinter as tk
-from typing import Type
 
 from traits.core import ViewWrapper
-from traits.views.int_in_range_ import BaseIntInRange
+from traits.views.int_in_range import _IntInRange
 
 
-class BaseFloatInRange(BaseIntInRange):
+class _FloatInRange(_IntInRange):
     low: float
     high: float
 
@@ -25,14 +24,11 @@ class BaseFloatInRange(BaseIntInRange):
             return float(self.entry.get())
 
 
-def float_in_range(low, high) -> Type[ViewWrapper]:
-    _low, _high = low, high
+class FloatInRange(ViewWrapper):
+    wrapping_class = _FloatInRange
 
-    class _FloatInRange(BaseFloatInRange):
-        low = _low
-        high = _high
-
-    class FloatInRange(ViewWrapper):
-        wrapping_class = _FloatInRange
-
-    return FloatInRange
+    def __call__(self, parent: tk.Misc, low=float('-inf'), high=float('inf')) -> tk.Widget:
+        return self._call_with_kwargs(parent, {
+            'low': low,
+            'high': high
+        })

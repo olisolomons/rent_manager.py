@@ -2,11 +2,10 @@ import enum
 import tkinter as tk
 from dataclasses import dataclass
 from datetime import date
-from typing import Type
 
 from tk_utils import Spacer
 from tk_utils.horizontal_scrolled_group import HorizontalScrolledGroup
-from traits.core import View, ViewWrapper
+from traits.core import View, ViewWrapper, RecordView
 from traits.header import HasHeader
 from traits.views import CurrencyView, StringView, DateView
 
@@ -52,15 +51,15 @@ class OtherTransaction(HasHeader):
 
     @classmethod
     def configure(cls, parent: tk.Frame, amount: CurrencyView, comment: StringView,
-                  _date: DateView, reason: ReasonView):
+                  _date: DateView, reason: ReasonView,
+                  comments_scroll_group=None):
         editing = amount.editing if hasattr(amount, 'editing') else False
         if not editing:
-            if hasattr(cls, 'comments_scroll_group'):
+            if comments_scroll_group is not None:
                 old_comment = comment
 
                 class FramedComment:
                     def __init__(self, parent):
-                        comments_scroll_group: HorizontalScrolledGroup = cls.comments_scroll_group
                         self.item = comments_scroll_group.add_frame(parent)
                         self.item.interior.config(bg='red')
                         old_comment(self.item.interior).pack(fill=tk.BOTH, anchor=tk.N + tk.W)
@@ -104,8 +103,8 @@ class OtherTransaction(HasHeader):
                 grid('Comment:', comment(parent))
 
 
-def other_transaction_scrolled(scroll_group: HorizontalScrolledGroup) -> Type[OtherTransaction]:
-    class OtherTransactionScrolled(OtherTransaction):
-        comments_scroll_group = scroll_group
-
-    return OtherTransactionScrolled
+class OtherTransactionView(RecordView):
+    def __call__(self, parent: tk.Misc, comments_scroll_group: HorizontalScrolledGroup = None) -> tk.Widget:
+        return self._call_with_kwargs(parent, {
+            'comments_scroll_group': comments_scroll_group
+        })

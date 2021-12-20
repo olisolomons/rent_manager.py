@@ -78,13 +78,23 @@ class ViewWrapper(Generic[T]):
         self.data: T = data
         self.wrapped_view: Optional[EditableView[T, Any]] = None
 
-    def __call__(self, parent: tk.Misc) -> tk.Widget:
+    def _call_with_kwargs(self, parent: tk.Misc, kwargs) -> tk.Widget:
+        wrapping_class = self.wrapping_class
+        if kwargs:
+            wrapping_class = type(
+                f'{self.wrapping_class.__name__}Custom',
+                (self.wrapping_class,),
+                kwargs
+            )
         if self.editing:
-            wrapped_constructor = typing.cast(Callable[[tk.Misc, T], EditableView], self.wrapping_class)
+            wrapped_constructor = typing.cast(Callable[[tk.Misc, T], EditableView], wrapping_class)
             self.wrapped_view = wrapped_constructor(parent, self.data)
             return self.wrapped_view.widget
         else:
-            return self.wrapping_class.view(parent, self.data)
+            return wrapping_class.view(parent, self.data)
+
+    def __call__(self, parent: tk.Misc) -> tk.Widget:
+        return self._call_with_kwargs(parent, {})
 
     def get_state(self) -> Optional[T]:
         if self.wrapped_view is None:
@@ -130,20 +140,24 @@ class RecordAction(Action):
 
 
 class _RecordView(EditableView[T, RecordAction]):
+    config_kwargs = {}
+
     @classmethod
     def view(cls, parent, data: ViewableRecord) -> tk.Widget:
         field_views = cls.make_field_views(data)
 
         frame = tk.Frame(parent)
-        data.configure(frame, **field_views)
+        data.configure(frame, **field_views, **cls.config_kwargs)
         return frame
 
     @classmethod
     def make_field_views(cls, data: ViewableRecord) -> dict[str, ViewWrapper]:
         sig = inspect.signature(data.configure)
+        dataclass_fields: set[str] = {field.name for field in dataclasses.fields(data)}
         return {
             field: cls.make_field_view(data, field, sig)
             for field in list(sig.parameters)[1:]
+            if field in dataclass_fields
         }
 
     @classmethod
@@ -165,7 +179,7 @@ class _RecordView(EditableView[T, RecordAction]):
                 view.editing = True
 
         self.frame = tk.Frame(parent)
-        data.configure(self.frame, **self.field_views)
+        data.configure(self.frame, **self.field_views, **self.config_kwargs)
 
         for field, view in self.field_views.items():
             if view.is_editable() and view.change_listeners is not None:
@@ -195,6 +209,27 @@ class _RecordView(EditableView[T, RecordAction]):
 
 class RecordView(ViewWrapper):
     wrapping_class = _RecordView
+
+    def _call_with_kwargs(self, parent: tk.Misc, kwargs) -> tk.Widget:
+        return super()._call_with_kwargs(parent, {'config_kwargs': kwargs})
+
+
+RV = TypeVar('RV', bound=RecordView)
+TypeVR = TypeVar('TypeVR', bound=Type[ViewableRecord])
+
+
+def partial_record_view(record_view: Type[RV],
+                        record_type: TypeVR,
+                        view: Callable[[RV, tk.Misc, ...], tk.Widget]) -> TypeVR:
+    class PartialRecordView(record_view):
+        def __call__(self, parent: tk.Misc, *args, **kwargs) -> tk.Widget:
+            return view(super().__call__, parent, *args, **kwargs)
+
+    class PartialViewableRecord(record_type):
+        def view(self, *, editing=False) -> ViewWrapper:
+            return PartialRecordView(self, editing)
+
+    return PartialViewableRecord
 
 
 class Isomorphism(ABC, Generic[T, U]):

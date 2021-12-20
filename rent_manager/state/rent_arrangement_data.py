@@ -2,7 +2,7 @@ from dataclasses import dataclass, field
 from datetime import date
 
 from traits.core import ViewableRecord
-from traits.views import DateView, CurrencyView, float_in_range
+from traits.views import DateView, CurrencyView, FloatInRange
 
 import tkinter as tk
 
@@ -15,7 +15,7 @@ class RentArrangementData(ViewableRecord):
 
     @staticmethod
     def configure(parent: tk.Frame, start_date: DateView, monthly_rent: CurrencyView,
-                  agents_fee: float_in_range(0, 100)):
+                  agents_fee: FloatInRange):
         i = 0
 
         def row(view, label):
@@ -29,6 +29,6 @@ class RentArrangementData(ViewableRecord):
 
         row(start_date, 'First day of rent')
         row(monthly_rent, 'Monthly rent due')
-        row(agents_fee, 'Agent\'s fee (%)')
+        row(lambda p: agents_fee(p, 0, 100), 'Agent\'s fee (%)')
 
         parent.grid_columnconfigure(1, weight=1)

@@ -3,7 +3,7 @@ import tkinter as tk
 from datetime import date
 
 from traits.core import ViewableRecord, Isomorphism, iso_view
-from traits.views.int_in_range_ import int_in_range
+from traits.views.int_in_range import IntInRange
 
 
 @dataclass
@@ -14,20 +14,20 @@ class MyDate(ViewableRecord):
 
     def configure(self,
                   parent: tk.Frame,
-                  day: int_in_range(1, 31, pad_digits=2),
-                  month: int_in_range(1, 12, pad_digits=2),
-                  year: int_in_range(1000, 3000)):
+                  day: IntInRange,
+                  month: IntInRange,
+                  year: IntInRange):
         parent.grid_columnconfigure(0, weight=1)
         parent.grid_columnconfigure(2, weight=1)
         parent.grid_columnconfigure(4, weight=1)
 
-        day_entry = day(parent)
+        day_entry = day(parent, 1, 31, pad_digits=2)
         day_entry.grid(row=0, column=0, sticky='EW')
         tk.Label(parent, text='/').grid(row=0, column=1)
-        month_entry = month(parent)
+        month_entry = month(parent, 1, 12, pad_digits=2)
         month_entry.grid(row=0, column=2, sticky='EW')
         tk.Label(parent, text='/').grid(row=0, column=3)
-        year_entry = year(parent)
+        year_entry = year(parent, 1000, 3000)
         year_entry.grid(row=0, column=4, sticky='EW')
 
         def day_validate(day_str):

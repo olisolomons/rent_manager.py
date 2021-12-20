@@ -1,15 +1,16 @@
 import tkinter as tk
-from typing import Callable, Type
+import typing
+from typing import Callable
 from datetime import date
 from dataclasses import dataclass, field
 
 import tk_utils
 from tk_utils.horizontal_scrolled_group import HorizontalScrolledGroup
-from traits.core import ViewableRecord
-from traits.views import ListView, list_view
+from traits.core import ViewableRecord, partial_record_view
+from traits.views import ListView
 
 from .rent_arrangement_data import RentArrangementData
-from .other_transaction import OtherTransaction, TransactionReason, other_transaction_scrolled
+from .other_transaction import OtherTransaction, TransactionReason, OtherTransactionView
 from .rent_payment import RentPayment
 from traits.header import header
 
@@ -17,32 +18,36 @@ from traits.header import header
 @dataclass
 class OtherTransactionMaker:
     comments_scroll_group: HorizontalScrolledGroup = None
-    other_transaction_class: Type[OtherTransaction] = None
 
     def make_buttons(self, frame: tk.Frame, add: Callable[[OtherTransaction], None]) -> tk.Widget:
         buttons_frame = tk.Frame(frame)
         self.comments_scroll_group = HorizontalScrolledGroup(buttons_frame)
         self.comments_scroll_group.scrollbar.grid(row=0, column=0, columnspan=4, sticky=tk.E + tk.W)
+
+        def view(record_view: OtherTransactionView, parent: tk.Misc) -> tk.Widget:
+            return record_view(parent, comments_scroll_group=self.comments_scroll_group)
+
+        OtherTransactionScrolled = partial_record_view(
+            OtherTransactionView,
+            OtherTransaction,
+            view
+        )
+
         for i, reason in enumerate(TransactionReason):
             name = reason.readable_name().lower()
+
+            def add_other_transaction(reason=reason):
+                add(typing.cast(Callable, OtherTransactionScrolled)(reason, 0, '', date.today()))
+
             button = tk.Button(
                 buttons_frame,
                 text=f'Add {name}',
-                command=lambda reason=reason: add(self.other_transaction_class())
-                # command=lambda reason=reason: add(self.other_transaction_class(reason, 0, '', date.today()))
+                command=add_other_transaction
             )
             button.grid(row=1, column=i, sticky='EW')
             buttons_frame.grid_columnconfigure(i, weight=1)
 
         return buttons_frame
-
-    def make_other_transaction_class(self):
-        self.other_transaction_class = other_transaction_scrolled(self.comments_scroll_group)
-
-
-RentPaymentsView = list_view(
-    add_button_widget_func=ListView[RentPayment].add_button(lambda: RentPayment(0, date.today(), date.today()))
-)
 
 
 @dataclass
@@ -52,16 +57,21 @@ class RentManagerMainState(ViewableRecord):
 
     @staticmethod
     def configure(parent: tk.Frame,
-                  rent_payments: RentPaymentsView,
+                  rent_payments: ListView,
                   other_transactions: ListView):
         other_transaction_maker = OtherTransactionMaker()
 
         header(parent, RentPayment).grid(row=0, column=0, sticky=tk_utils.STICKY_ALL)
-        rent_payments(parent).grid(row=1, column=0, sticky=tk_utils.STICKY_ALL)
+        rent_payments(
+            parent,
+            add_button_widget_func=ListView[RentPayment].add_button(lambda: RentPayment(0, date.today(), date.today()))
+        ).grid(row=1, column=0, sticky=tk_utils.STICKY_ALL)
         header(parent, OtherTransaction).grid(row=0, column=1, sticky=tk_utils.STICKY_ALL)
-        other_transactions.wrapping_class._add_button_widget_func = other_transaction_maker.make_buttons
-        other_transactions(parent).grid(row=1, column=1, sticky=tk_utils.STICKY_ALL)
-        other_transaction_maker.make_other_transaction_class()
+        other_transactions(
+            parent,
+            add_button_widget_func=other_transaction_maker.make_buttons
+        ).grid(row=1, column=1, sticky=tk_utils.STICKY_ALL)
+        # other_transaction_maker.make_other_transaction_class()
 
         parent.grid_rowconfigure(1, weight=1)
         parent.grid_columnconfigure(0, weight=1, uniform='rent_manager')
@@ -97,7 +107,10 @@ class RentCalculations:
         }
 
         for rent_payment in rent_manager_state.rent_manager_main_state.rent_payments:
-            rent_for_months[rent_payment.for_month] += rent_payment.amount
+            try:
+                rent_for_months[rent_payment.for_month] += rent_payment.amount
+            except KeyError:
+                print(f'{rent_payment.for_month} is not a month in the rental period')
 
         total_rent_received = sum(
             rent_payment.amount

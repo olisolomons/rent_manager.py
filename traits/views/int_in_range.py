@@ -6,7 +6,7 @@ from traits.core import ViewWrapper
 from traits.views.common.string_var_undo_manager import StringEditableView
 
 
-class BaseIntInRange(StringEditableView):
+class _IntInRange(StringEditableView):
     low: int
     high: int
     pad_digits: Optional[int] = None
@@ -64,15 +64,12 @@ class BaseIntInRange(StringEditableView):
         return self._entry
 
 
-def int_in_range(low, high, pad_digits=None) -> Type[ViewWrapper]:
-    _low, _high, _pad_digits = low, high, pad_digits
+class IntInRange(ViewWrapper):
+    wrapping_class = _IntInRange
 
-    class _IntInRange(BaseIntInRange):
-        low = _low
-        high = _high
-        pad_digits = _pad_digits
-
-    class IntInRange(ViewWrapper):
-        wrapping_class = _IntInRange
-
-    return IntInRange
+    def __call__(self, parent: tk.Misc, low=float('-inf'), high=float('inf'), pad_digits=None) -> tk.Widget:
+        return self._call_with_kwargs(parent, {
+            'low': low,
+            'high': high,
+            'pad_digits': pad_digits
+        })

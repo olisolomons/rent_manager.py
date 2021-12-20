@@ -2,7 +2,7 @@ from abc import abstractmethod
 from dataclasses import dataclass
 from typing import TypeVar, Generic, Optional
 
-from traits.core import EditableView, Action, U
+from traits.core import EditableView, Action
 import tkinter as tk
 
 
@@ -42,7 +42,7 @@ class StringVarUndoManager:
         self.str_view.string_var.trace('w', lambda *args: self.str_view.entry.after(5, self.on_change))
         self.previous_value = self.str_view.string_var.get()
 
-    def on_focus(self, e):
+    def on_focus(self, _e):
         self.previous_cursor = self.str_view.entry.index(tk.INSERT)
 
     def on_change(self):

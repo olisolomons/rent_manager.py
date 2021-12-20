@@ -6,7 +6,7 @@ import enum
 
 import tkinter as tk
 from tkinter import filedialog
-from tkinter import simpledialog, dialog
+from tkinter import simpledialog
 
 import dataclass_json
 import tk_utils
@@ -122,7 +122,7 @@ class RentManagerApp(DocumentManager):
     def frame(self) -> tk.Frame:
         return self._frame
 
-    def on_change(self, action):
+    def on_change(self, _action):
         self.changed = True
 
         if self.calculation_timer is not None:
@@ -252,7 +252,7 @@ class RentManagerApp(DocumentManager):
                 super().__init__(root, title)
                 self.cancelled = False
 
-            def on_change(self, action):
+            def on_change(self, _action):
                 if self.view.get_state() is None:
                     self.button.config(state=tk.DISABLED)
                 else:

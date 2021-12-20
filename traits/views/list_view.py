@@ -271,7 +271,7 @@ class _ListView(Generic[T], EditableView[list[T], ListChangeAction]):
         self.dragged_item: Optional[ListItemRecord[T]] = None
         self.editable = editable
 
-        def stop_dragging(e):
+        def stop_dragging(_e):
             if self.dragged_item:
                 self.dragged_item.frame.config(highlightthickness=0)
                 self.dragged_item = None
@@ -335,7 +335,7 @@ class _ListView(Generic[T], EditableView[list[T], ListChangeAction]):
             move_arrow = tk.Label(item_frame, text='↕', cursor='fleur')
             move_arrow.grid(row=0, column=0)
 
-            def start_dragging(e):
+            def start_dragging(_e):
                 self.dragged_item = item_record
                 item_frame.config(highlightthickness=1)
 
@@ -436,7 +436,7 @@ class _ListView(Generic[T], EditableView[list[T], ListChangeAction]):
             yield node.view
 
 
-class ListView(Generic[T], ViewWrapper[list[T]]):
+class ListView(ViewWrapper[list[T]], Generic[T]):
     wrapping_class = _ListView
 
     @staticmethod

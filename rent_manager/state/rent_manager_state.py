@@ -28,7 +28,8 @@ class OtherTransactionMaker:
             button = tk.Button(
                 buttons_frame,
                 text=f'Add {name}',
-                command=lambda reason=reason: add(self.other_transaction_class(reason, 0, '', date.today()))
+                command=lambda reason=reason: add(self.other_transaction_class())
+                # command=lambda reason=reason: add(self.other_transaction_class(reason, 0, '', date.today()))
             )
             button.grid(row=1, column=i, sticky='EW')
             buttons_frame.grid_columnconfigure(i, weight=1)

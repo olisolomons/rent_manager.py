@@ -20,8 +20,8 @@ class RentArrangementData(ViewableRecord):
 
         def row(view, label):
             nonlocal i
-            l = tk.Label(parent, text=f'{label}:')
-            l.grid(row=i, column=0, sticky=tk.W)
+            label = tk.Label(parent, text=f'{label}:')
+            label.grid(row=i, column=0, sticky=tk.W)
             w = view(parent)
             w.grid(row=i, column=1, sticky=tk.E + tk.W)
 

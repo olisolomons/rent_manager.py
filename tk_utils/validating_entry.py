@@ -18,7 +18,7 @@ class ValidatingEntry(tk.Entry):
 
         self.is_valid = True
 
-    def on_write(self, *args):
+    def on_write(self, *_args):
         self.string_var.set(self.disallowed_sequences.sub('', self.string_var.get()))
         if self.is_valid != self.validate_function(self.string_var.get()):
             self.is_valid = not self.is_valid

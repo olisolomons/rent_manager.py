@@ -1,11 +1,9 @@
 import dataclasses
-import collections
 import enum
 import json
-import typing
+from abc import ABC
 from datetime import date
-from typing import Callable, Type
-from abc import ABC, abstractmethod
+from typing import Type
 
 
 class Serializer(ABC):

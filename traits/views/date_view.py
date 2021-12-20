@@ -43,7 +43,7 @@ class MyDate(ViewableRecord):
         if hasattr(month_entry, 'string_var') \
                 and hasattr(day_entry, 'string_var') \
                 and hasattr(year_entry, 'string_var'):
-            def update_day(*args):
+            def update_day(*_args):
                 day_entry.string_var.set(day_entry.string_var.get())
 
             month_entry.string_var.trace('w', update_day)

@@ -1,12 +1,12 @@
-import tkinter as tk
 import enum
+import tkinter as tk
 from dataclasses import dataclass
 from datetime import date
 from typing import Type
 
 from tk_utils import Spacer
 from tk_utils.horizontal_scrolled_group import HorizontalScrolledGroup
-from traits.core import ViewableRecord, EditableView, View, ViewWrapper
+from traits.core import View, ViewWrapper
 from traits.header import HasHeader
 from traits.views import CurrencyView, StringView, DateView
 
@@ -36,6 +36,11 @@ class ReasonView(ViewWrapper):
 
 @dataclass
 class OtherTransaction(HasHeader):
+    reason: TransactionReason
+    amount: int
+    comment: str
+    _date: date
+
     @staticmethod
     def header_names() -> dict[str, str]:
         return {
@@ -44,11 +49,6 @@ class OtherTransaction(HasHeader):
             'comment': 'Comment',
             '_date': 'Date',
         }
-
-    reason: TransactionReason
-    amount: int
-    comment: str
-    _date: date
 
     @classmethod
     def configure(cls, parent: tk.Frame, amount: CurrencyView, comment: StringView,

@@ -1,6 +1,5 @@
 import dataclasses
 import tkinter as tk
-import heapq
 from dataclasses import dataclass, field
 from typing import Any, Optional
 
@@ -28,7 +27,7 @@ class HorizontalScrolledGroup:
 
     def xview(self, command, pos):
         pos = float(pos)
-        pos = max(0, pos)
+        pos = max(0., pos)
         for scrolled_item in self.scrolled_items:
             scrolled_item.canvas.xview(command, pos)
 
@@ -68,7 +67,7 @@ class HorizontalScrolledGroup:
 
         # track changes to the canvas and frame width and sync them,
         # also updating the scrollbar
-        def _configure_interior(event):
+        def _configure_interior(_event):
             # update the scrollbars to match the size of the inner frame
             size = (interior.winfo_reqwidth(), interior.winfo_reqheight())
             canvas.config(scrollregion="0 0 %s %s" % size)
@@ -78,14 +77,14 @@ class HorizontalScrolledGroup:
 
         interior.bind('<Configure>', _configure_interior)
 
-        def _configure_canvas(event):
+        def _configure_canvas(_event):
             if interior.winfo_reqheight() != canvas.winfo_height():
                 # update the inner frame's width to fill the canvas
                 canvas.itemconfigure(interior_id, height=canvas.winfo_height())
 
         canvas.bind('<Configure>', _configure_canvas)
 
-        def _on_item_destroy(e):
+        def _on_item_destroy(_event):
             self.scrolled_items.remove(scrolled_item)
             if scrolled_item is self.smallest_bar_size_item:
                 self.recompute_smallest_bar()
@@ -97,7 +96,7 @@ class HorizontalScrolledGroup:
 
         return scrolled_item
 
-    def recompute_smallest_bar(self, start=0):
+    def recompute_smallest_bar(self, start=0.):
         smallest = min(self.scrolled_items, key=lambda scrolled_item: scrolled_item.bar_size, default=None)
         self.smallest_bar_size_item = smallest
         if smallest:

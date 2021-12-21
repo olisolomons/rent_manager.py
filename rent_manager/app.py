@@ -18,7 +18,7 @@ from .state.rent_arrangement_data import RentArrangementData
 
 from .state.rent_manager_state import RentManagerState, RentCalculations
 
-from threading import Timer
+from tk_utils import ResettableTimer
 
 
 class UnsavedChangesResult(enum.Enum):
@@ -57,7 +57,7 @@ class RentManagerApp(DocumentManager):
         # noinspection PyTypeChecker
         self.data: RentManagerState = None
 
-        self.calculation_timer: Optional[Timer] = None
+        self.calculation_timer: ResettableTimer = ResettableTimer(parent, 1.5, self.do_calculations)
         self.calculation_results: Optional[RentCalculations] = None
 
         self.populate_from_data(RentManagerState())
@@ -95,8 +95,7 @@ class RentManagerApp(DocumentManager):
 
         self.undo_manager = UndoManager.from_wrapper(self.view)
 
-        if self.calculation_timer is not None:
-            self.calculation_timer.cancel()
+        self.calculation_timer.cancel()
         self.do_calculations()
 
     @property
@@ -125,14 +124,10 @@ class RentManagerApp(DocumentManager):
     def on_change(self, _action):
         self.changed = True
 
-        if self.calculation_timer is not None:
-            self.calculation_timer.cancel()
-        self.calculation_timer = Timer(1.5, self.do_calculations)
-        self.calculation_timer.start()
+        self.calculation_timer.touch()
 
     def do_calculations(self):
         data = self.view.get_state()
-        self.calculation_timer = None
         if data is not None:
             self.data.rent_manager_main_state = data
             self.calculation_results = RentCalculations.from_rent_manager_state(self.data)
@@ -212,6 +207,8 @@ class RentManagerApp(DocumentManager):
 
         self.file_path = file_path
 
+        self.calculation_timer.cancel()
+
         self.w.destroy()
 
         with open(file_path, 'r') as f:
@@ -226,6 +223,8 @@ class RentManagerApp(DocumentManager):
         rent_arrangements = self.rent_arrangements_dialog(RentArrangementData(), 'Rent Arrangements for New Document')
         if rent_arrangements is None:
             return
+
+        self.calculation_timer.cancel()
 
         self.w.destroy()
 

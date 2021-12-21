@@ -440,20 +440,24 @@ class _ListView(Generic[T], EditableView[list[T], ListChangeAction]):
             yield node.view
 
 
-class ListView(ViewWrapper[list[T]], Generic[T]):
+U = TypeVar('U')
+
+
+class ListView(ViewWrapper[list[U]], Generic[U]):
     wrapping_class = _ListView
 
     @staticmethod
-    def add_button(new_item_func: Callable[[], T], *, text: str = 'Add') \
+    def add_button(new_item_func: Callable[[], U], *, text: str = 'Add') \
             -> Callable[[tk.Frame, Callable[[T], None]], tk.Widget]:
         def add_button_widget_func(frame: tk.Frame, add: Callable[[T], None]) -> tk.Widget:
             return tk.Button(frame, text=text, command=lambda: add(new_item_func()))
 
         return add_button_widget_func
 
-    def __call__(self, parent: tk.Misc, item_view_func=None, add_button_widget_func=None) -> tk.Widget:
+    def __call__(self, parent: tk.Misc,
+                 item_view_func: Callable[[U], ViewWrapper] = None,
+                 add_button_widget_func: Callable[[tk.Frame, Callable[[U], None]], tk.Widget] = None) -> tk.Widget:
         return self._call_with_kwargs(parent, {
             'item_view_func': item_view_func,
             'add_button_widget_func': add_button_widget_func
         })
-

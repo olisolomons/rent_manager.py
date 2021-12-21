@@ -59,6 +59,8 @@ class RentManagerApp(DocumentManager):
 
         self.calculation_timer: ResettableTimer = ResettableTimer(parent, 1.5, self.do_calculations)
         self.calculation_results: Optional[RentCalculations] = None
+        # noinspection PyTypeChecker
+        self.notify_calculations_change: Callable[[RentCalculations], None] = None
 
         self.populate_from_data(RentManagerState())
 
@@ -87,7 +89,14 @@ class RentManagerApp(DocumentManager):
         self.data = data
 
         self.view = data.rent_manager_main_state.view(editing=True)
-        self.w = self.view(self._frame)
+
+        def set_on_calculations_change(on_calculations_change):
+            self.notify_calculations_change = on_calculations_change
+
+        self.w = self.view(
+            self._frame,
+            set_on_calculations_change=set_on_calculations_change
+        )
 
         self.view.change_listeners.add(self.on_change)
 
@@ -131,6 +140,7 @@ class RentManagerApp(DocumentManager):
         if data is not None:
             self.data.rent_manager_main_state = data
             self.calculation_results = RentCalculations.from_rent_manager_state(self.data)
+            self.notify_calculations_change(self.calculation_results)
 
     def filedialog(self, dialog):
         top = self.frame.winfo_toplevel()

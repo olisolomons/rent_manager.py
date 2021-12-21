@@ -1,12 +1,12 @@
 import tkinter as tk
 import typing
-from typing import Callable
+from typing import Callable, Optional
 from datetime import date
 from dataclasses import dataclass, field
 
 import tk_utils
 from tk_utils.horizontal_scrolled_group import HorizontalScrolledGroup
-from traits.core import ViewableRecord, partial_record_view
+from traits.core import ViewableRecord, partial_record_view, RecordView, ViewWrapper
 from traits.views import ListView
 
 from .rent_arrangement_data import RentArrangementData
@@ -57,25 +57,70 @@ class RentManagerMainState(ViewableRecord):
 
     @staticmethod
     def configure(parent: tk.Frame,
-                  rent_payments: ListView,
-                  other_transactions: ListView):
+                  rent_payments: ListView[RentPayment],
+                  other_transactions: ListView[OtherTransaction],
+                  set_on_calculations_change: 'Callable[[Callable[[RentCalculations],None]], None]'):
+        rent_calculations: Optional[RentCalculations] = None
+
+        def on_calculations_change(calculations: RentCalculations):
+            nonlocal rent_calculations
+            rent_calculations = calculations
+            print(f'in main state {rent_calculations=}')
+
+        def make_rent_payment_buttons(parent: tk.Frame, add: Callable[[RentPayment], None]) -> tk.Widget:
+            frame = tk.Frame(parent)
+
+            def add_entry():
+                first_unpaid_month = next(
+                    (
+                        month
+                        for month, amount_paid in rent_calculations.rent_for_months
+                        if amount_paid == 0
+                    ),
+                    date.today()
+                ) if rent_calculations else date.today()
+                add(RentPayment(0, date.today(), first_unpaid_month))
+
+            add_entry_button = tk.Button(frame, text='Add', command=add_entry)
+            add_entry_button.grid(row=0, column=0, sticky=tk.E + tk.W)
+
+            frame.grid_columnconfigure(0, weight=1)
+
+            return frame
+
+        set_on_calculations_change(on_calculations_change)
+
         other_transaction_maker = OtherTransactionMaker()
 
         header(parent, RentPayment).grid(row=0, column=0, sticky=tk_utils.STICKY_ALL)
         rent_payments(
             parent,
-            add_button_widget_func=ListView[RentPayment].add_button(lambda: RentPayment(0, date.today(), date.today()))
+            add_button_widget_func=make_rent_payment_buttons
         ).grid(row=1, column=0, sticky=tk_utils.STICKY_ALL)
         header(parent, OtherTransaction).grid(row=0, column=1, sticky=tk_utils.STICKY_ALL)
         other_transactions(
             parent,
             add_button_widget_func=other_transaction_maker.make_buttons
         ).grid(row=1, column=1, sticky=tk_utils.STICKY_ALL)
-        # other_transaction_maker.make_other_transaction_class()
 
         parent.grid_rowconfigure(1, weight=1)
         parent.grid_columnconfigure(0, weight=1, uniform='rent_manager')
         parent.grid_columnconfigure(1, weight=1, uniform='rent_manager')
+
+    def view(self, *, editing=False) -> 'RentManagerMainStateView':
+        return RentManagerMainStateView(self, editing)
+
+
+class RentManagerMainStateView(RecordView):
+    def __call__(self, parent: tk.Misc,
+                 set_on_calculations_change: 'Callable[[Callable[[RentCalculations],None]], None]' = None) -> tk.Widget:
+        if set_on_calculations_change is None:
+            def set_on_calculations_change(_on_calculations_change):
+                pass
+
+        return self._call_with_kwargs(parent, {
+            'set_on_calculations_change': set_on_calculations_change
+        })
 
 
 @dataclass

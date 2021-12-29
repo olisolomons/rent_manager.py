@@ -191,6 +191,7 @@ class RentManagerMainState(ViewableRecord):
                 buttons[reason] = button
 
             def update_other_transaction_buttons():
+                # agent's fee button
                 agent_fee_button = buttons[TransactionReason.AgentFee]
                 agent_fee_button.config(
                     text=f'Claim £{rent_calculations.unclaimed_commission / 100:0.2f} commission'
@@ -200,6 +201,14 @@ class RentManagerMainState(ViewableRecord):
                     add(TransactionReason.AgentFee, rent_calculations.unclaimed_commission, '', date.today())
 
                 agent_fee_button.config(command=claim_commission)
+
+                # landlord payment button
+                payment_button = buttons[TransactionReason.Payment]
+                payment_button.config(text=f'Pay £{rent_calculations.balance / 100:0.2f} to landlord')
+
+                def pay_landlord():
+                    add(TransactionReason.Payment, rent_calculations.balance, '', date.today())
+                payment_button.config(command=pay_landlord)
 
             if rent_calculations is not None:
                 update_other_transaction_buttons()

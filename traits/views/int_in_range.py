@@ -10,6 +10,7 @@ class _IntInRange(StringEditableView):
     low: int
     high: int
     pad_digits: Optional[int] = None
+    _extra_validate: Optional[Callable[[str], bool]] = None
 
     @classmethod
     def view(cls, parent, data) -> tk.Widget:
@@ -26,13 +27,10 @@ class _IntInRange(StringEditableView):
         super().__init__()
 
         self.data = data
-        self.extra_validate: Optional[Callable[[str], bool]] = None
 
         def validate(s):
             try:
-                return len(s) > 0 and (self.low <= float(s) <= self.high) and (
-                    self.extra_validate(s) if self.extra_validate else True
-                )
+                return len(s) > 0 and (self.low <= float(s) <= self.high) and self.extra_validate(s)
             except ValueError:
                 return False
 
@@ -42,6 +40,10 @@ class _IntInRange(StringEditableView):
             disallowed_sequences=self.disallowed_sequences()
         )
         self.setup()
+
+    @classmethod
+    def extra_validate(cls, data):
+        return cls._extra_validate(data) if cls._extra_validate else True
 
     @staticmethod
     def disallowed_sequences():
@@ -67,9 +69,11 @@ class _IntInRange(StringEditableView):
 class IntInRange(ViewWrapper):
     wrapping_class = _IntInRange
 
-    def __call__(self, parent: tk.Misc, low=float('-inf'), high=float('inf'), pad_digits=None) -> tk.Widget:
+    def __call__(self, parent: tk.Misc, low=float('-inf'), high=float('inf'), pad_digits=None,
+                 extra_validate=None) -> tk.Widget:
         return self._call_with_kwargs(parent, {
             'low': low,
             'high': high,
-            'pad_digits': pad_digits
+            'pad_digits': pad_digits,
+            '_extra_validate': extra_validate
         })

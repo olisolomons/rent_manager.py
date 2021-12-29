@@ -21,15 +21,6 @@ class MyDate(ViewableRecord):
         parent.grid_columnconfigure(2, weight=1)
         parent.grid_columnconfigure(4, weight=1)
 
-        day_entry = day(parent, 1, 31, pad_digits=2)
-        day_entry.grid(row=0, column=0, sticky='EW')
-        tk.Label(parent, text='/').grid(row=0, column=1)
-        month_entry = month(parent, 1, 12, pad_digits=2)
-        month_entry.grid(row=0, column=2, sticky='EW')
-        tk.Label(parent, text='/').grid(row=0, column=3)
-        year_entry = year(parent, 1000, 3000)
-        year_entry.grid(row=0, column=4, sticky='EW')
-
         def day_validate(day_str):
             if not (month.get_state() is None or year.get_state() is None):
                 try:
@@ -39,15 +30,26 @@ class MyDate(ViewableRecord):
 
             return True
 
-        day.extra_validate = day_validate
+        day_entry = day(parent, 1, 31, pad_digits=2, extra_validate=day_validate)
+        day_entry.grid(row=0, column=0, sticky='EW')
+        tk.Label(parent, text='/').grid(row=0, column=1)
+        month_entry = month(parent, 1, 12, pad_digits=2)
+        month_entry.grid(row=0, column=2, sticky='EW')
+        tk.Label(parent, text='/').grid(row=0, column=3)
+        year_entry = year(parent, 1000, 3000)
+        year_entry.grid(row=0, column=4, sticky='EW')
+
         if hasattr(month_entry, 'string_var') \
                 and hasattr(day_entry, 'string_var') \
                 and hasattr(year_entry, 'string_var'):
             def update_day(*_args):
                 day_entry.string_var.set(day_entry.string_var.get())
 
-            month_entry.string_var.trace('w', update_day)
-            year_entry.string_var.trace('w', update_day)
+            # month_entry.string_var.trace('w', update_day)
+            # year_entry.string_var.trace('w', update_day)
+
+            month.wrapped_view.change_listeners.add(update_day)
+            year.wrapped_view.change_listeners.add(update_day)
 
 
 class DateMyDateIso(Isomorphism[date, MyDate]):

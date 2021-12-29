@@ -62,6 +62,8 @@ class RentManagerApp(DocumentManager):
         self.calculation_results: Optional[RentCalculations] = None
         # noinspection PyTypeChecker
         self.notify_calculations_change: Callable[[RentCalculations], None] = None
+        # noinspection PyTypeChecker
+        self.notify_arrangement_data_change: Callable[[RentArrangementData], None] = None
 
         self.populate_from_data(RentManagerState())
 
@@ -94,9 +96,13 @@ class RentManagerApp(DocumentManager):
         def set_on_calculations_change(on_calculations_change):
             self.notify_calculations_change = on_calculations_change
 
+        def set_on_arrangement_data_change(on_arrangement_data_change):
+            self.notify_arrangement_data_change = on_arrangement_data_change
+
         self.view_widget = self.view(
             self._frame,
-            set_on_calculations_change=set_on_calculations_change
+            set_on_calculations_change=set_on_calculations_change,
+            set_on_arrangement_data_change=set_on_arrangement_data_change
         )
 
         self.view.change_listeners.add(self.on_change)
@@ -107,6 +113,8 @@ class RentManagerApp(DocumentManager):
 
         self.calculation_timer.cancel()
         self.do_calculations()
+
+        self.notify_arrangement_data_change(self.data.rent_arrangement_data)
 
     @property
     def config(self):
@@ -231,7 +239,7 @@ class RentManagerApp(DocumentManager):
         if cancelled:
             return
 
-        rent_arrangements = self.rent_arrangements_dialog(RentArrangementData(), 'Rent Arrangements for New Document')
+        rent_arrangements = data_dialog(self._frame, RentArrangementData(), 'Rent Arrangements for New Document')
         if rent_arrangements is None:
             return
 
@@ -254,4 +262,5 @@ class RentManagerApp(DocumentManager):
         new_rent_arrangement_data = data_dialog(self._frame, self.data.rent_arrangement_data, 'Edit Rent Arrangements')
         if new_rent_arrangement_data is not None:
             self.data.rent_arrangement_data = new_rent_arrangement_data
+            self.notify_arrangement_data_change(new_rent_arrangement_data)
             self.on_change(None)

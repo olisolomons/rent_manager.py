@@ -52,13 +52,13 @@ class RentManagerApp(DocumentManager):
         # noinspection PyTypeChecker
         self.view: ViewWrapper = None
         # noinspection PyTypeChecker
-        self.w: tk.Widget = None
+        self.view_widget: tk.Widget = None
         # noinspection PyTypeChecker
         self.undo_manager: UndoManager = None
         # noinspection PyTypeChecker
         self.data: RentManagerState = None
 
-        self.calculation_timer: ResettableTimer = ResettableTimer(parent, 1.5, self.do_calculations)
+        self.calculation_timer: ResettableTimer = ResettableTimer(parent, 0.5, self.do_calculations)
         self.calculation_results: Optional[RentCalculations] = None
         # noinspection PyTypeChecker
         self.notify_calculations_change: Callable[[RentCalculations], None] = None
@@ -94,14 +94,14 @@ class RentManagerApp(DocumentManager):
         def set_on_calculations_change(on_calculations_change):
             self.notify_calculations_change = on_calculations_change
 
-        self.w = self.view(
+        self.view_widget = self.view(
             self._frame,
             set_on_calculations_change=set_on_calculations_change
         )
 
         self.view.change_listeners.add(self.on_change)
 
-        self.w.grid(sticky=tk_utils.STICKY_ALL)
+        self.view_widget.grid(sticky=tk_utils.STICKY_ALL)
 
         self.undo_manager = UndoManager.from_wrapper(self.view)
 
@@ -220,7 +220,7 @@ class RentManagerApp(DocumentManager):
 
         self.calculation_timer.cancel()
 
-        self.w.destroy()
+        self.view_widget.destroy()
 
         with open(file_path, 'r') as f:
             data = dataclass_json.load(RentManagerState, f)
@@ -237,7 +237,7 @@ class RentManagerApp(DocumentManager):
 
         self.calculation_timer.cancel()
 
-        self.w.destroy()
+        self.view_widget.destroy()
 
         self.populate_from_data(RentManagerState(rent_arrangement_data=rent_arrangements))
 

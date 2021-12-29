@@ -50,6 +50,7 @@ class RentManagerMainState(ViewableRecord):
         def on_calculations_change(calculations: RentCalculations):
             nonlocal rent_calculations
             rent_calculations = calculations
+            update_other_transaction_buttons()
 
         set_on_calculations_change(on_calculations_change)
 
@@ -57,6 +58,7 @@ class RentManagerMainState(ViewableRecord):
             nonlocal rent_arrangement_data
             rent_arrangement_data = arrangement_data
             update_rent_payment_buttons()
+            update_other_transaction_buttons()
             print(f'{rent_arrangement_data=}')
 
         set_on_arrangement_data_change(on_arrangement_data_change)
@@ -64,8 +66,18 @@ class RentManagerMainState(ViewableRecord):
         def update_rent_payment_buttons():
             pass
 
-        def make_rent_payment_buttons(parent: tk.Frame, add: Callable[[RentPayment], None]) -> tk.Widget:
+        def make_rent_payment_buttons(parent: tk.Frame, add_basic: Callable[[RentPayment], None]) -> tk.Widget:
             nonlocal update_rent_payment_buttons
+
+            def add(amount: int, received_on: date, for_month: date) -> None:
+                add_basic(RentPayment(amount, received_on, for_month))
+                add_other_transaction(
+                    TransactionReason.AgentFee,
+                    int(amount * rent_arrangement_data.agents_fee / 100),
+                    f'For month {for_month.month:0>2}/{for_month.year}',
+                    received_on
+                )
+
             frame = tk.Frame(parent)
 
             def add_entry():
@@ -77,13 +89,15 @@ class RentManagerMainState(ViewableRecord):
                     ),
                     date.today()
                 ) if rent_calculations else date.today()
-                add(RentPayment(rent_arrangement_data.monthly_rent, date.today(), first_unpaid_month))
+                add(rent_arrangement_data.monthly_rent, date.today(), first_unpaid_month)
 
             add_entry_button = tk.Button(frame, text='Add', command=add_entry)
             add_entry_button.grid(row=0, column=0, sticky=tk.E + tk.W)
 
-            def update_rent_payment_buttons():
+            def _update_rent_payment_buttons():
                 add_entry_button.config(text=f'Add £{rent_arrangement_data.monthly_rent / 100:0.2f} payment')
+
+            update_rent_payment_buttons = _update_rent_payment_buttons
 
             if rent_arrangement_data is not None:
                 update_rent_payment_buttons()
@@ -121,7 +135,7 @@ class RentManagerMainState(ViewableRecord):
                     for_month, already_paid = next(non_filled_months)
 
                     to_pay_this_month = min(amount_to_fill, monthly_rent - already_paid)
-                    add(RentPayment(to_pay_this_month, fill_unpaid_data.received_on, for_month))
+                    add(to_pay_this_month, fill_unpaid_data.received_on, for_month)
 
                     amount_to_fill -= to_pay_this_month
 
@@ -133,7 +147,20 @@ class RentManagerMainState(ViewableRecord):
 
             return frame
 
-        def make_other_transaction_buttons(frame: tk.Frame, add: Callable[[OtherTransaction], None]) -> tk.Widget:
+        # noinspection PyTypeChecker
+        add_other_transaction: Callable[[TransactionReason, int, str, date], None] = None
+
+        def update_other_transaction_buttons():
+            pass
+
+        def make_other_transaction_buttons(frame: tk.Frame, add_basic: Callable[[OtherTransaction], None]) -> tk.Widget:
+            nonlocal add_other_transaction, update_other_transaction_buttons
+
+            def add(reason: TransactionReason, amount: int, comment: str, _date: date) -> None:
+                return add_basic(typing.cast(Callable, OtherTransactionScrolled)(reason, amount, comment, _date))
+
+            add_other_transaction = add
+
             buttons_frame = tk.Frame(frame)
             comments_scroll_group = HorizontalScrolledGroup(buttons_frame)
             comments_scroll_group.scrollbar.grid(row=0, column=0, columnspan=4, sticky=tk.E + tk.W)
@@ -146,20 +173,36 @@ class RentManagerMainState(ViewableRecord):
                 OtherTransaction,
                 view
             )
-
+            buttons: dict[TransactionReason, tk.Button] = {}
             for i, reason in enumerate(TransactionReason):
                 name = reason.readable_name().lower()
 
-                def add_other_transaction(reason=reason):
-                    add(typing.cast(Callable, OtherTransactionScrolled)(reason, 0, '', date.today()))
+                def add_other_transaction_with_reason(reason=reason):
+                    add(reason, 0, '', date.today())
 
                 button = tk.Button(
                     buttons_frame,
                     text=f'Add {name}',
-                    command=add_other_transaction
+                    command=add_other_transaction_with_reason
                 )
                 button.grid(row=1, column=i, sticky='EW')
                 buttons_frame.grid_columnconfigure(i, weight=1)
+
+                buttons[reason] = button
+
+            def update_other_transaction_buttons():
+                agent_fee_button = buttons[TransactionReason.AgentFee]
+                agent_fee_button.config(
+                    text=f'Claim £{rent_calculations.unclaimed_commission / 100:0.2f} commission'
+                )
+
+                def claim_commission():
+                    add(TransactionReason.AgentFee, rent_calculations.unclaimed_commission, '', date.today())
+
+                agent_fee_button.config(command=claim_commission)
+
+            if rent_calculations is not None:
+                update_other_transaction_buttons()
 
             return buttons_frame
 

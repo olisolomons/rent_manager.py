@@ -1,3 +1,5 @@
+from fractions import Fraction
+
 from traits.core import ViewWrapper
 import tkinter as tk
 
@@ -52,7 +54,7 @@ class _CurrencyView(StringEditableView[int]):
     def get_state(self) -> int:
         s = self._entry.get()
         if s is not None:
-            return int(float(s) * 100)
+            return int(Fraction(s) * 100)
 
 
 class CurrencyView(ViewWrapper):

@@ -12,6 +12,7 @@ import dataclass_json
 import tk_utils
 from traits.core import ViewWrapper
 from traits.undo_manager import UndoManager
+from traits.dialog import data_dialog
 from . import config
 from .menu import DocumentManager, BasicEditorMenu
 from .state.rent_arrangement_data import RentArrangementData
@@ -249,62 +250,8 @@ class RentManagerApp(DocumentManager):
     def redo(self):
         self.undo_manager.redo()
 
-    def rent_arrangements_dialog(self, rent_arrangements: RentArrangementData, title: str):
-        root = self._frame.winfo_toplevel()
-
-        class EditArrangementsDialog(simpledialog.Dialog):
-            def __init__(self):
-                # noinspection PyTypeChecker
-                self.view: ViewWrapper = None
-                # noinspection PyTypeChecker
-                self.button: tk.Button = None
-                super().__init__(root, title)
-                self.cancelled = False
-
-            def on_change(self, _action):
-                if self.view.get_state() is None:
-                    self.button.config(state=tk.DISABLED)
-                else:
-                    self.button.config(state=tk.NORMAL)
-
-            def body(self, master):
-                self.view = rent_arrangements.view(editing=True)
-                w = self.view(master)
-                w.pack(fill=tk.BOTH)
-
-            def buttonbox(self):
-                box = tk.Frame(self)
-
-                self.button = tk.Button(box, text="Save", command=self.ok)
-                self.button.pack(side=tk.LEFT, padx=5, pady=5)
-                w = tk.Button(box, text="Cancel", command=self.cancel)
-                w.pack(side=tk.LEFT, padx=5, pady=5)
-
-                self.bind("<Return>", self.ok)
-                self.bind("<Escape>", self.cancel)
-
-                self.view.change_listeners.add(self.on_change)
-
-                box.pack()
-
-            def validate(self):
-                return self.view.get_state() is not None
-
-            def cancel(self, event=None):
-                super().cancel()
-                self.cancelled = True
-
-            def get_state(self):
-                if self.cancelled:
-                    return
-                else:
-                    return self.view.get_state()
-
-        return EditArrangementsDialog().get_state()
-
     def edit_rent_arrangements(self):
-        new_rent_arrangement_data = self.rent_arrangements_dialog(self.data.rent_arrangement_data,
-                                                                  'Edit Rent Arrangements')
+        new_rent_arrangement_data = data_dialog(self._frame, self.data.rent_arrangement_data, 'Edit Rent Arrangements')
         if new_rent_arrangement_data is not None:
             self.data.rent_arrangement_data = new_rent_arrangement_data
             self.on_change(None)

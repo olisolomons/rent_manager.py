@@ -6,6 +6,7 @@ from datetime import date
 from dataclasses import dataclass, field
 
 import tk_utils
+from tk_utils import Spacer
 from tk_utils.horizontal_scrolled_group import HorizontalScrolledGroup
 from traits.core import ViewableRecord, partial_record_view, RecordView, ViewWrapper
 from traits.views import ListView, CurrencyView, DateView
@@ -47,21 +48,20 @@ class RentManagerMainState(ViewableRecord):
         rent_calculations: Optional[RentCalculations] = None
         rent_arrangement_data: Optional[RentArrangementData] = None
 
+        @set_on_calculations_change
         def on_calculations_change(calculations: RentCalculations):
             nonlocal rent_calculations
             rent_calculations = calculations
             update_other_transaction_buttons()
+            arrears.config(text=f'Arrears: £{rent_calculations.arrears / 100:0.2f}')
 
-        set_on_calculations_change(on_calculations_change)
-
+        @set_on_arrangement_data_change
         def on_arrangement_data_change(arrangement_data: RentArrangementData):
             nonlocal rent_arrangement_data
             rent_arrangement_data = arrangement_data
             update_rent_payment_buttons()
             update_other_transaction_buttons()
             print(f'{rent_arrangement_data=}')
-
-        set_on_arrangement_data_change(on_arrangement_data_change)
 
         def update_rent_payment_buttons():
             pass
@@ -208,6 +208,7 @@ class RentManagerMainState(ViewableRecord):
 
                 def pay_landlord():
                     add(TransactionReason.Payment, rent_calculations.balance, '', date.today())
+
                 payment_button.config(command=pay_landlord)
 
             if rent_calculations is not None:
@@ -215,18 +216,22 @@ class RentManagerMainState(ViewableRecord):
 
             return buttons_frame
 
-        header(parent, RentPayment).grid(row=0, column=0, sticky=tk_utils.STICKY_ALL)
+        arrears = tk.Label(parent)
+        arrears.grid(row=0, column=0, sticky=tk.W, columnspan=2)
+        Spacer(parent, horizontal=True).grid(row=1, column=0, columnspan=2, pady=2)
+
+        header(parent, RentPayment).grid(row=2, column=0, sticky=tk_utils.STICKY_ALL)
         rent_payments(
             parent,
             add_button_widget_func=make_rent_payment_buttons
-        ).grid(row=1, column=0, sticky=tk_utils.STICKY_ALL)
-        header(parent, OtherTransaction).grid(row=0, column=1, sticky=tk_utils.STICKY_ALL)
+        ).grid(row=3, column=0, sticky=tk_utils.STICKY_ALL)
+        header(parent, OtherTransaction).grid(row=2, column=1, sticky=tk_utils.STICKY_ALL)
         other_transactions(
             parent,
             add_button_widget_func=make_other_transaction_buttons
-        ).grid(row=1, column=1, sticky=tk_utils.STICKY_ALL)
+        ).grid(row=3, column=1, sticky=tk_utils.STICKY_ALL)
 
-        parent.grid_rowconfigure(1, weight=1)
+        parent.grid_rowconfigure(3, weight=1)
         parent.grid_columnconfigure(0, weight=1, uniform='rent_manager')
         parent.grid_columnconfigure(1, weight=1, uniform='rent_manager')
 

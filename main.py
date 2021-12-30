@@ -1,9 +1,10 @@
 import tkinter as tk
 
 from rent_manager.app import RentManagerApp
-
+import report_generator
 
 def main() -> None:
+    report_generator.hello_world()
     w, h = 1200, 1000
 
     root = tk.Tk()

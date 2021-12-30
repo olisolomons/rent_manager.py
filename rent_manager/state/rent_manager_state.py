@@ -1,4 +1,3 @@
-import dataclasses
 import tkinter as tk
 import typing
 from typing import Callable, Optional, Iterator
@@ -8,7 +7,7 @@ from dataclasses import dataclass, field
 import tk_utils
 from tk_utils import Spacer
 from tk_utils.horizontal_scrolled_group import HorizontalScrolledGroup
-from traits.core import ViewableRecord, partial_record_view, RecordView, ViewWrapper
+from traits.core import ViewableRecord, partial_record_view, RecordView
 from traits.views import ListView, CurrencyView, DateView
 from traits.dialog import data_dialog
 

@@ -51,7 +51,7 @@ def data_dialog(root: tk.Misc, data: T, title: str, view_func: Callable[[T], Vie
             return self.view.get_state() is not None
 
         def apply(self):
-            self.ok_pressed=True
+            self.ok_pressed = True
 
         def get_state(self):
             if self.ok_pressed:

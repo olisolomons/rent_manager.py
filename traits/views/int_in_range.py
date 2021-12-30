@@ -1,5 +1,5 @@
 import tkinter as tk
-from typing import Callable, Optional, Type
+from typing import Callable, Optional
 
 import tk_utils
 from traits.core import ViewWrapper

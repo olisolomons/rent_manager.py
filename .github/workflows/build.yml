@@ -58,8 +58,8 @@ jobs:
               cd launcher/ &&
               pyinstaller
                 -F -w -n rent_manager
-                --add-data main.py;.
-                --add-data ../launcher_requirements.txt;.
+                "--add-data" main.py;.
+                "--add-data" ../launcher_requirements.txt;.
                 bootstrap.py
             OUT_FILE_NAME: rent_manager.exe
             ASSET_MIME: application/vnd.microsoft.portable-executable

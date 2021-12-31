@@ -39,6 +39,7 @@ jobs:
           - os: macos-latest
             TARGET: macos
             CMD_BUILD: >
+              cd launcher/ &&
               $(pyenv root)/versions/3.9.7/bin/python -m PyInstaller -F -w -n rent_manager main.py &&
               cd dist/ &&
               zip -r9 rent_manager rent_manager.app/
@@ -48,7 +49,7 @@ jobs:
             PYTHON: $(pyenv root)/versions/3.9.7/bin/python
           - os: windows-latest
             TARGET: windows
-            CMD_BUILD: pyinstaller -F -w -n rent_manager main.py
+            CMD_BUILD: cd launcher/ && pyinstaller -F -w -n rent_manager main.py
             OUT_FILE_NAME: rent_manager.exe
             ASSET_MIME: application/vnd.microsoft.portable-executable
             OVERRIDE_PYTHON: false
@@ -73,7 +74,7 @@ jobs:
       - name: Install dependencies
         run: |
           ${{matrix.PYTHON}} -m pip install --upgrade pip
-          ${{matrix.PYTHON}} -m pip install -r requirements.txt
+          ${{matrix.PYTHON}} -m pip install -r launcher_requirements.txt
       - name: Build with pyinstaller for ${{matrix.TARGET}}
         run: ${{matrix.CMD_BUILD}}
       - name: Load Release URL File from release job
@@ -93,6 +94,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.get_release_info.outputs.upload_url }}
-          asset_path: ./dist/${{ matrix.OUT_FILE_NAME}}
+          asset_path: ./launcher/dist/${{ matrix.OUT_FILE_NAME}}
           asset_name: ${{ matrix.OUT_FILE_NAME}}
           asset_content_type: ${{ matrix.ASSET_MIME}}

@@ -40,7 +40,7 @@ jobs:
             TARGET: macos
             CMD_BUILD: >
               cd launcher/ &&
-              $(pyenv root)/versions/3.9.7/bin/python -m PyInstaller -F -w -n rent_manager main.py &&
+              $(pyenv root)/versions/3.9.7/bin/python -m PyInstaller -F -w -n rent_manager --hidden-import=_cffi_backend main.py &&
               cd dist/ &&
               zip -r9 rent_manager rent_manager.app/
             OUT_FILE_NAME: rent_manager.zip
@@ -49,7 +49,7 @@ jobs:
             PYTHON: $(pyenv root)/versions/3.9.7/bin/python
           - os: windows-latest
             TARGET: windows
-            CMD_BUILD: cd launcher/ && pyinstaller -F -w -n rent_manager main.py
+            CMD_BUILD: cd launcher/ && pyinstaller -F -w -n rent_manager --hidden-import=_cffi_backend main.py
             OUT_FILE_NAME: rent_manager.exe
             ASSET_MIME: application/vnd.microsoft.portable-executable
             OVERRIDE_PYTHON: false

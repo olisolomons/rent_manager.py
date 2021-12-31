@@ -1,3 +1,2 @@
 appdirs==1.4.4
 PyGithub==1.55
-pyinstaller==4.3

@@ -44,8 +44,8 @@ jobs:
               cd dist/ &&
               mkdir venv &&
               $(pyenv root)/versions/3.9.7/bin/python -m venv --system-site-packages venv &&
-              $(pyenv root)/versions/3.9.7/bin/python -m pip install venv-pack
-              $(pyenv root)/versions/3.9.7/bin/python -m venv_pack -p venv -o rent_manager.app/venv.tar.gz
+              $(pyenv root)/versions/3.9.7/bin/python -m pip install venv-pack &&
+              $(pyenv root)/versions/3.9.7/bin/python -m venv_pack -p venv -o rent_manager.app/venv.tar.gz &&
               zip -r9 rent_manager rent_manager.app/
             OUT_FILE_NAME: rent_manager.zip
             ASSET_MIME: application/zip

@@ -23,7 +23,11 @@ def bootstrap():
     shutil.rmtree(user_data / 'python', ignore_errors=True)
     (user_data / 'python').mkdir(parents=True)
 
-    run(['/usr/bin/env', 'sh', script_dir / 'miniconda.sh', '-b', '-p', conda_dir], check=True)
+    print(f"{(script_dir / 'miniconda.sh')=}; {(script_dir / 'miniconda.sh').is_file()=}")
+    res = run(['/usr/bin/env', 'sh', str(script_dir / 'miniconda.sh'), '-b', '-p', str(conda_dir)])
+    print(res.returncode)
+    res.check_returncode()
+
     run([conda_dir / 'bin' / 'conda', 'create', '-p', conda_venv_dir, 'python=3.9', '--yes'], check=True)
 
     venv_dir.mkdir(parents=True)

@@ -63,11 +63,20 @@ jobs:
       - name: Set up homebrew
         if: ${{matrix.OVERRIDE_PYTHON}}
         uses: Homebrew/actions/setup-homebrew@master
-      - name: Homebrew install python
+      - name: Install pyenv
         if: ${{matrix.OVERRIDE_PYTHON}}
         run: >
           brew install pyenv &&
-          eval "$(pyenv init -)" &&
+          eval "$(pyenv init -)"
+      - name: Cache python build
+        id: cache-python
+        uses: actions/cache@v2
+        with:
+          path: $(pyenv root)/versions/3.9.7/
+          key: ${{ matrix.os }}-python
+      - name: Homebrew install python
+        if: ${{matrix.OVERRIDE_PYTHON && steps.cache-python.outputs.cache-hit != 'true' }}
+        run: >
           env SDKROOT=/Applications/Xcode_10.3.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk MACOSX_DEPLOYMENT_TARGET="10.3" PYTHON_CONFIGURE_OPTS="--enable-framework" pyenv install 3.9.7 &&
           pyenv global 3.9.7
       - name: Set up Python 3.9

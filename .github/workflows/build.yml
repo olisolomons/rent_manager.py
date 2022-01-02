@@ -42,8 +42,8 @@ jobs:
               cd launcher/ &&
               $(pyenv root)/versions/3.9.7/bin/python -m PyInstaller -F -w -n rent_manager --add-data "main.py:." --add-data "../launcher_requirements.txt:." bootstrap.py &&
               cd dist/ &&
-              mkdir rent_manager/venv
-              $(pyenv root)/versions/3.9.7/bin/python -m venv --system-site-packages --copies rent_manager/venv
+              mkdir rent_manager.app/venv &&
+              $(pyenv root)/versions/3.9.7/bin/python -m venv --system-site-packages --copies rent_manager.app/venv &&
               zip -r9 rent_manager rent_manager.app/
             OUT_FILE_NAME: rent_manager.zip
             ASSET_MIME: application/zip

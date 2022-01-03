@@ -52,7 +52,7 @@ jobs:
             TARGET: windows
             CMD_BUILD: >
               cd launcher/ &&
-              wget -q https://repo.anaconda.com/miniconda/Miniconda3-py39_4.9.2-Windows-x86_64.exe -O miniconda.exe &&
+              C:\msys64\usr\bin\wget.exe -q https://repo.anaconda.com/miniconda/Miniconda3-py39_4.9.2-Windows-x86_64.exe -O miniconda.exe &&
               pyinstaller -F -w -n rent_manager --add-data "main.py:." --add-data "../launcher_requirements.txt:." --add-data "miniconda.exe:." bootstrap.py
             OUT_FILE_NAME: rent_manager.exe
             ASSET_MIME: application/vnd.microsoft.portable-executable

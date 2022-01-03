@@ -66,6 +66,11 @@ def install_latest_release() -> Path:
     zipfile = ZipFile(io.BytesIO(resp))
     zipfile.extractall(release_dir)
 
+    zip_contents = next(release_dir.iterdir())
+    for item in list(zip_contents.iterdir()):
+        shutil.move(item, release_dir)
+    zip_contents.rmdir()
+
     # prepare venv
     release_venv = release_dir / 'venv'
     release_venv.mkdir()

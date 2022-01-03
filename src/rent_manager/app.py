@@ -126,13 +126,12 @@ class RentManagerApp(DocumentManager):
         config.save(self._config)
 
     def bind_key(self, func: Callable[[], None], key: Optional[str] = None, shift: bool = False):
-        ctrl = 'Meta_L' if sys.platform == 'darwin' else 'Control'
-        shift_str = '-Shift' if shift else ''
+        ctrl = 'Command' if sys.platform == 'darwin' else 'Control'
         if key is None:
             key = func.__name__[0]
         if shift:
             key = key.upper()
-        sequence = f'<{ctrl}{shift_str}-{key}>'
+        sequence = f'<{ctrl}-{key}>'
         self.frame.bind_all(sequence, lambda e: func())
 
     @property

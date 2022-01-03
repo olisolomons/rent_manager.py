@@ -78,6 +78,8 @@ def install_latest_release() -> Path:
     run([conda_venv_dir / 'bin' / 'python', '-m', 'venv', release_venv], check=True)
     run([release_venv / 'bin' / 'python', '-m', 'pip', 'install', '-r', release_dir / 'requirements.txt'], check=True)
 
+    (release_dir / install_complete_marker).touch()
+
     return release_dir
 
 

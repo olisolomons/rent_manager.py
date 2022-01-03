@@ -58,7 +58,7 @@ def install_latest_release() -> Path:
 
     # prepare directory
     release_dir = user_cache / 'releases' / release.tag_name
-    shutil.rmtree(release_dir)
+    shutil.rmtree(release_dir, ignore_errors=True)
     release_dir.mkdir(parents=True, exist_ok=True)
 
     # download and extract

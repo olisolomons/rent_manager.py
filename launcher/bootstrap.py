@@ -23,7 +23,11 @@ def bootstrap():
     shutil.rmtree(user_cache / 'python', ignore_errors=True)
     (user_cache / 'python').mkdir(parents=True)
 
-    run(['/usr/bin/env', 'sh', script_dir / 'miniconda.sh', '-b', '-p', conda_dir], check=True)
+    if sys.platform.startswith('win'):
+        run([script_dir / 'miniconda.exe', '/InstallationType=JustMe', 'RegisterPython=0', '/S',
+             f'/D={conda_dir}'], check=True)
+    else:
+        run(['/usr/bin/env', 'sh', script_dir / 'miniconda.sh', '-b', '-p', conda_dir], check=True)
 
     run([conda_dir / 'bin' / 'conda', 'create', '-p', conda_venv_dir, 'python=3.9', '--yes'], check=True)
 

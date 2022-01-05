@@ -10,7 +10,7 @@ import subprocess
 from subprocess import run
 import sys
 import tkinter as tk
-from tkinter import ttk
+# from tkinter import ttk
 import simple_ipc
 
 is_windows = sys.platform.startswith('win')
@@ -86,8 +86,8 @@ class InstallerApp(tk.Tk):
         self.title('Rent Manager - Installing')
         self.grid_columnconfigure(0, weight=1)
 
-        self.progress = ttk.Progressbar(self, orient=tk.HORIZONTAL, length=100, mode='indeterminate')
-        self.progress.grid(padx=20, pady=20, sticky=tk.E + tk.W)
+        # self.progress = ttk.Progressbar(self, orient=tk.HORIZONTAL, length=100, mode='indeterminate')
+        # self.progress.grid(padx=20, pady=20, sticky=tk.E + tk.W)
 
         self.current_task = tk.Label(self, text='Starting installer')
         self.current_task.grid(row=1, column=0, pady=20)
@@ -99,7 +99,7 @@ class InstallerApp(tk.Tk):
         self.update_progress()
 
     def update_progress(self):
-        self.progress['value'] += 5
+        # self.progress['value'] += 5
         if not self.current_task_queue.empty():
             task = self.current_task_queue.get()
             if isinstance(task, str):
@@ -108,7 +108,7 @@ class InstallerApp(tk.Tk):
                 self.destroy()
                 return
             elif task['type'] == 'error':
-                self.progress.destroy()
+                # self.progress.destroy()
                 self.current_task.destroy()
                 tb = task['traceback']
                 message = tk.Message(self, text=f'An error has occurred:\n\n{tb}')
@@ -144,6 +144,7 @@ def bootstrap_and_run():
 
 def main():
     app = InstallerApp(bootstrap_and_run)
+    app.geometry('300x200')
 
     app.mainloop()
 

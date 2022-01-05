@@ -11,6 +11,7 @@ from subprocess import run
 import sys
 import tkinter as tk
 from tkinter import ttk
+import simple_ipc
 
 is_windows = sys.platform.startswith('win')
 
@@ -72,6 +73,11 @@ def test_task():
     time.sleep(1)
     yield 'Task b'
     time.sleep(3)
+    with simple_ipc.get_sock() as sock:
+        server = simple_ipc.Server(sock)
+        proc = subprocess.Popen(['/usr/bin/env', 'python3', 'main.py', str(server.port)])
+        yield from server.recv_all()
+    proc.wait()
 
 
 class InstallerApp(tk.Tk):
@@ -116,6 +122,7 @@ class InstallerApp(tk.Tk):
         try:
             for current_step in task:
                 self.current_task_queue.put(current_step)
+            self.current_task_queue.put(CLOSE_WINDOW)
         except Exception:
             self.current_task_queue.put({'type': 'error', 'traceback': traceback.format_exc()})
 
@@ -128,8 +135,11 @@ class InstallerApp(tk.Tk):
 def bootstrap_and_run():
     yield from bootstrap()
     yield 'Installed launcher... Please wait for launcher to start'
-    yield CLOSE_WINDOW
-    subprocess.run([venv_dir / 'bin' / 'python', script_dir / 'main.py', *sys.argv[1:]])
+    with simple_ipc.get_sock() as sock:
+        server = simple_ipc.Server(sock)
+        launcher = subprocess.Popen([venv_dir / 'bin' / 'python', 'main.py', *sys.argv[1:]], cwd=script_dir)
+        yield from server.recv_all()
+    launcher.wait()
 
 
 def main():

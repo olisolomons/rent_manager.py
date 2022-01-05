@@ -1,7 +1,9 @@
 import re
 import shutil
+import time
 from subprocess import run
 from typing import Optional
+import simple_ipc
 
 from github import Github
 import requests
@@ -52,17 +54,23 @@ def install_latest_release() -> Path:
     :return: The directory into which the release was installed
     """
     # get latest_release release
+    yield 'Finding latest release'
     g = Github()
     repo = g.get_repo('olisolomons/rent_manager.py')
     release = next(iter(repo.get_releases()))
+
+    yield f'Setup for release {release.tag_name}'
 
     # prepare directory
     release_dir = user_cache / 'releases' / release.tag_name
     shutil.rmtree(release_dir, ignore_errors=True)
     release_dir.mkdir(parents=True, exist_ok=True)
 
+    yield f'Downloading release {release.tag_name}'
+
     # download and extract
     resp = requests.get(release.zipball_url).content
+    yield 'Unpacking'
     zipfile = ZipFile(io.BytesIO(resp))
     zipfile.extractall(release_dir)
 
@@ -71,6 +79,8 @@ def install_latest_release() -> Path:
         shutil.move(item, release_dir)
     zip_contents.rmdir()
 
+    yield f'Installing release {release.tag_name}'
+
     # prepare venv
     release_venv = release_dir / 'venv'
     release_venv.mkdir()
@@ -78,6 +88,7 @@ def install_latest_release() -> Path:
     run([conda_venv_dir / 'bin' / 'python', '-m', 'venv', release_venv], check=True)
     run([release_venv / 'bin' / 'python', '-m', 'pip', 'install', '-r', release_dir / 'requirements.txt'], check=True)
 
+    yield 'Finishing application installation'
     (release_dir / install_complete_marker).touch()
 
     return release_dir
@@ -85,11 +96,32 @@ def install_latest_release() -> Path:
 
 def run_application(release_dir: Path) -> None:
     release_venv = release_dir / 'venv'
-    run([release_venv / 'bin' / 'python', 'main.py', *sys.argv[1:]], check=True, cwd=release_dir / 'src')
+    run([release_venv / 'bin' / 'python', 'main.py', *sys.argv[2:]], check=True, cwd=release_dir / 'src')
+
+
+def install_and_launch():
+    latest_release = get_latest_release()
+    if latest_release is None:
+        latest_release = yield from install_latest_release()
+    yield {'type': 'close_window'}
+    run_application(latest_release)
+
+
+def test_task2():
+    yield 'Now in test_task2'
+    time.sleep(1.5)
+    yield 'It\'s working!'
+    time.sleep(0.75)
+    # raise Exception('it\'s not working!')
+    yield {'type': 'close_window'}
+    for i in range(10):
+        print(f'{i=} main.py')
+        time.sleep(0.5)
 
 
 if __name__ == '__main__':
-    latest_release = get_latest_release()
-    if latest_release is None:
-        latest_release = install_latest_release()
-    run_application(latest_release)
+    print(f'{sys.argv=}')
+    port = int(sys.argv[1])
+    with simple_ipc.get_sock() as sock:
+        client = simple_ipc.Client(sock, port)
+        client.run(install_and_launch())

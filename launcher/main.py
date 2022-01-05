@@ -13,11 +13,20 @@ import appdirs
 from pathlib import Path
 import sys
 
+is_windows = sys.platform.startswith('win')
+
 rent_manager_dirs = appdirs.AppDirs('RentManager')
 user_cache = Path(rent_manager_dirs.user_cache_dir)
 
 conda_venv_dir = user_cache / 'python' / 'conda_venv'
 venv_dir = user_cache / 'python' / 'venv'
+
+if is_windows:
+    conda_venv_dir_python = conda_venv_dir / 'python.exe'
+    venv_dir_python_relative = Path('Scripts') / 'python.exe'
+else:
+    conda_venv_dir_python = conda_venv_dir / 'bin' / 'python'
+    venv_dir_python_relative = Path('bin') / 'python'
 
 install_complete_marker = 'install_complete_marker'
 
@@ -53,7 +62,6 @@ def install_latest_release() -> Path:
     Install the latest_release release
     :return: The directory into which the release was installed
     """
-    # get latest_release release
     yield 'Finding latest release'
     g = Github()
     repo = g.get_repo('olisolomons/rent_manager.py')
@@ -85,8 +93,9 @@ def install_latest_release() -> Path:
     release_venv = release_dir / 'venv'
     release_venv.mkdir()
 
-    run([conda_venv_dir / 'bin' / 'python', '-m', 'venv', release_venv], check=True)
-    run([release_venv / 'bin' / 'python', '-m', 'pip', 'install', '-r', release_dir / 'requirements.txt'], check=True)
+    run([conda_venv_dir_python, '-m', 'venv', release_venv], check=True)
+    run([release_venv / venv_dir_python_relative, '-m', 'pip', 'install', '-r', release_dir / 'requirements.txt'],
+        check=True)
 
     yield 'Finishing application installation'
     (release_dir / install_complete_marker).touch()
@@ -96,7 +105,7 @@ def install_latest_release() -> Path:
 
 def run_application(release_dir: Path) -> None:
     release_venv = release_dir / 'venv'
-    run([release_venv / 'bin' / 'python', 'main.py', *sys.argv[2:]], check=True, cwd=release_dir / 'src')
+    run([release_venv / venv_dir_python_relative, 'main.py', *sys.argv[2:]], check=True, cwd=release_dir / 'src')
 
 
 def install_and_launch():

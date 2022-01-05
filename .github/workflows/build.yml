@@ -41,7 +41,7 @@ jobs:
             CMD_BUILD: >
               cd launcher/ &&
               wget -q https://repo.anaconda.com/miniconda/Miniconda3-py39_4.9.2-MacOSX-x86_64.sh -O /tmp/miniconda.sh &&
-              $(pyenv root)/versions/3.9.7/bin/python -m PyInstaller -F -w -n rent_manager --add-data "main.py:." --add-data "simple_ipc.py:." --add-data "../launcher_requirements.txt:." --add-data "/tmp/miniconda.sh:." bootstrap.py &&
+              env MACOSX_DEPLOYMENT_TARGET="10.3" $(pyenv root)/versions/3.9.7/bin/python -m PyInstaller -F -w -n rent_manager --add-data "main.py:." --add-data "simple_ipc.py:." --add-data "../launcher_requirements.txt:." --add-data "/tmp/miniconda.sh:." bootstrap.py &&
               cd dist/ &&
               zip -r9 rent_manager rent_manager.app/
             OUT_FILE_NAME: rent_manager.zip

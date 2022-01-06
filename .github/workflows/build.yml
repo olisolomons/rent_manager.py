@@ -41,7 +41,7 @@ jobs:
             CMD_BUILD: >
               cd launcher/ &&
               wget -q https://repo.anaconda.com/miniconda/Miniconda3-py39_4.9.2-MacOSX-x86_64.sh -O /tmp/miniconda.sh &&
-              env MACOSX_DEPLOYMENT_TARGET="10.3" python3 -m PyInstaller -F -w -n rent_manager --add-data "main.py:." --add-data "simple_ipc.py:." --add-data "../launcher_requirements.txt:." --add-data "/tmp/miniconda.sh:." bootstrap.py &&
+              env MACOSX_DEPLOYMENT_TARGET="10.9" python3 -m PyInstaller -F -w -n rent_manager --add-data "main.py:." --add-data "simple_ipc.py:." --add-data "../launcher_requirements.txt:." --add-data "/tmp/miniconda.sh:." bootstrap.py &&
               cd dist/ &&
               zip -r9 rent_manager rent_manager.app/
             OUT_FILE_NAME: rent_manager.zip
@@ -66,8 +66,8 @@ jobs:
       - name: Homebrew install python
         if: ${{matrix.OVERRIDE_PYTHON}}
         run: >
-          curl https://www.python.org/ftp/python/3.9.1/python-${PYTHON_VERSION}-macosx10.9.pkg -o "python.pkg" &&
-          sudo env MACOSX_DEPLOYMENT_TARGET="10.3" installer -pkg python.pkg -target /
+          curl https://www.python.org/ftp/python/3.9.1/python-3.9.1-macosx10.9.pkg -o "python.pkg" &&
+          sudo env MACOSX_DEPLOYMENT_TARGET="10.9" installer -pkg python.pkg -target /
       - name: Set up Python 3.9
         if: ${{!matrix.OVERRIDE_PYTHON}}
         uses: actions/setup-python@v2

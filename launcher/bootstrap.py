@@ -152,7 +152,8 @@ def bootstrap_and_run():
     yield 'Installed launcher... Please wait for launcher to start'
     with simple_ipc.get_sock() as sock:
         server = simple_ipc.Server(sock)
-        launcher = subprocess.Popen([venv_dir / 'bin' / 'python', 'main.py', *sys.argv[1:]], cwd=script_dir)
+        launcher = subprocess.Popen([venv_dir / 'bin' / 'python', 'main.py', str(server.port), *sys.argv[1:]],
+                                    cwd=script_dir)
         yield from server.recv_all()
     launcher.wait()
 

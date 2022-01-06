@@ -41,13 +41,13 @@ jobs:
             CMD_BUILD: >
               cd launcher/ &&
               wget -q https://repo.anaconda.com/miniconda/Miniconda3-py39_4.9.2-MacOSX-x86_64.sh -O /tmp/miniconda.sh &&
-              env MACOSX_DEPLOYMENT_TARGET="10.3" $(pyenv root)/versions/3.9.7/bin/python -m PyInstaller -F -w -n rent_manager --add-data "main.py:." --add-data "simple_ipc.py:." --add-data "../launcher_requirements.txt:." --add-data "/tmp/miniconda.sh:." bootstrap.py &&
+              env MACOSX_DEPLOYMENT_TARGET="10.3" python3 -m PyInstaller -F -w -n rent_manager --add-data "main.py:." --add-data "simple_ipc.py:." --add-data "../launcher_requirements.txt:." --add-data "/tmp/miniconda.sh:." bootstrap.py &&
               cd dist/ &&
               zip -r9 rent_manager rent_manager.app/
             OUT_FILE_NAME: rent_manager.zip
             ASSET_MIME: application/zip
             OVERRIDE_PYTHON: true
-            PYTHON: $(pyenv root)/versions/3.9.7/bin/python
+            PYTHON: python3
           - os: windows-latest
             TARGET: windows
             CMD_BUILD: >
@@ -66,10 +66,8 @@ jobs:
       - name: Homebrew install python
         if: ${{matrix.OVERRIDE_PYTHON}}
         run: >
-          brew install pyenv &&
-          eval "$(pyenv init -)" &&
-          env SDKROOT=/Applications/Xcode_10.3.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk MACOSX_DEPLOYMENT_TARGET="10.3" PYTHON_CONFIGURE_OPTS="--enable-framework" pyenv install 3.9.7 &&
-          pyenv global 3.9.7
+          curl https://www.python.org/ftp/python/3.9.1/python-${PYTHON_VERSION}-macosx10.9.pkg -o "python.pkg" &&
+          sudo env MACOSX_DEPLOYMENT_TARGET="10.3" installer -pkg python.pkg -target /
       - name: Set up Python 3.9
         if: ${{!matrix.OVERRIDE_PYTHON}}
         uses: actions/setup-python@v2

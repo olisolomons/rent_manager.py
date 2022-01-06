@@ -10,7 +10,8 @@ import subprocess
 from subprocess import run
 import sys
 import tkinter as tk
-# from tkinter import ttk
+from tkinter import ttk
+from tkinter.scrolledtext import ScrolledText
 import simple_ipc
 
 is_windows = sys.platform.startswith('win')
@@ -86,8 +87,8 @@ class InstallerApp(tk.Tk):
         self.title('Rent Manager - Installing')
         self.grid_columnconfigure(0, weight=1)
 
-        # self.progress = ttk.Progressbar(self, orient=tk.HORIZONTAL, length=100, mode='indeterminate')
-        # self.progress.grid(padx=20, pady=20, sticky=tk.E + tk.W)
+        self.progress = ttk.Progressbar(self, orient=tk.HORIZONTAL, length=100, mode='indeterminate')
+        self.progress.grid(padx=20, pady=20, sticky=tk.E + tk.W)
 
         self.current_task = tk.Label(self, text='Starting installer')
         self.current_task.grid(row=1, column=0, pady=20)
@@ -99,7 +100,7 @@ class InstallerApp(tk.Tk):
         self.update_progress()
 
     def update_progress(self):
-        # self.progress['value'] += 5
+        self.progress['value'] += 5
         if not self.current_task_queue.empty():
             task = self.current_task_queue.get()
             if isinstance(task, str):
@@ -107,12 +108,26 @@ class InstallerApp(tk.Tk):
             elif task == CLOSE_WINDOW:
                 self.destroy()
                 return
+
             elif task['type'] == 'error':
-                # self.progress.destroy()
+                self.progress.destroy()
                 self.current_task.destroy()
                 tb = task['traceback']
-                message = tk.Message(self, text=f'An error has occurred:\n\n{tb}')
+
+                message = ScrolledText(self)
+                message.insert(tk.CURRENT, f'An error has occurred. '
+                                           f'Please copy this text and send it to the developer:\n\n{tb}')
                 message.grid(row=0, column=0, sticky='NESW')
+                message.config(state=tk.DISABLED)
+                message.bind("<1>", lambda _event: message.focus_set())
+
+                def copy_traceback():
+                    self.clipboard_clear()
+                    self.clipboard_append(tb)
+
+                copy_button = tk.Button(self, text='Copy to clipboard', command=copy_traceback)
+                copy_button.grid(row=1, column=0, sticky='EW')
+                self.grid_rowconfigure(0, weight=1)
                 return
 
         self.after(50, self.update_progress)

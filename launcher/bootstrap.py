@@ -107,6 +107,7 @@ class InstallerApp(tk.Tk):
                 self.current_task.config(text=task)
             elif task == CLOSE_WINDOW:
                 self.destroy()
+                print('Installer window closed')
                 return
 
             elif task['type'] == 'error':

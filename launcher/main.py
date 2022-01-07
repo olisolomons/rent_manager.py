@@ -1,8 +1,8 @@
 import re
 import shutil
 import time
-from subprocess import run
-from typing import Optional
+from subprocess import run, Popen
+from typing import Optional, Generator, Union, TypeVar, Any, Callable
 import simple_ipc
 
 from github import Github
@@ -103,17 +103,35 @@ def install_latest_release() -> Path:
     return release_dir
 
 
-def run_application(release_dir: Path) -> None:
+def run_application(release_dir: Path) -> Popen:
     release_venv = release_dir / 'venv'
-    run([release_venv / venv_dir_python_relative, 'main.py', *sys.argv[2:]], check=True, cwd=release_dir / 'src')
+    return Popen([release_venv / venv_dir_python_relative, 'main.py', *sys.argv[2:]], cwd=release_dir / 'src')
 
 
-def install_and_launch():
+T = TypeVar('T')
+U = TypeVar('U')
+
+
+def generator_return_value(g: Generator[T, Any, U]) -> tuple[Generator[T, Any, U], Callable[[], U]]:
+    return_value: Optional[U] = None
+
+    def proxy_generator() -> Generator[T, Any, U]:
+        nonlocal return_value
+        return_value = yield from g
+        return return_value
+
+    def get() -> U:
+        return return_value
+
+    return proxy_generator(), get
+
+
+def install_and_launch() -> Generator[Union[str, dict], None, Popen]:
     latest_release = get_latest_release()
     if latest_release is None:
         latest_release = yield from install_latest_release()
     yield {'type': 'close_window'}
-    run_application(latest_release)
+    return run_application(latest_release)
 
 
 def test_task2():
@@ -133,4 +151,8 @@ if __name__ == '__main__':
     port = int(sys.argv[1])
     with simple_ipc.get_sock() as sock:
         client = simple_ipc.Client(sock, port)
-        client.run(install_and_launch())
+        install_and_launch, get_app_process = generator_return_value(install_and_launch())
+        client.run(install_and_launch)
+
+    app_process = get_app_process()
+    app_process.wait()

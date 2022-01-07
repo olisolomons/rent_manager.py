@@ -53,16 +53,12 @@ class Client:
         self.sock.sendall(msg)
 
     def run(self, it: Iterator):
-        sock_error = None
         try:
-            for item in itertools.chain(it, ({'type': 'close'},)):
-                try:
-                    self.send(item)
-                except OSError as e:
-                    sock_error = e
-        except Exception as e:
+            for item in it:
+                self.send(item)
+            self.send({'type': 'close'})
+        except OSError as e:
+            raise e
+        except Exception:
             tb = traceback.format_exc()
             self.send({'type': 'error', 'traceback': tb})
-        else:
-            if sock_error is not None:
-                raise sock_error

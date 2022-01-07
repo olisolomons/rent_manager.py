@@ -107,7 +107,6 @@ class InstallerApp(tk.Tk):
                 self.current_task.config(text=task)
             elif task == CLOSE_WINDOW:
                 self.destroy()
-                print('Installer window closed')
                 return
 
             elif task['type'] == 'error':
@@ -153,10 +152,9 @@ def bootstrap_and_run():
     yield 'Installed launcher... Please wait for launcher to start'
     with simple_ipc.get_sock() as sock:
         server = simple_ipc.Server(sock)
-        launcher = subprocess.Popen([venv_dir / 'bin' / 'python', 'main.py', str(server.port), *sys.argv[1:]],
-                                    cwd=script_dir)
+        subprocess.Popen([venv_dir / 'bin' / 'python', 'main.py', str(server.port), *sys.argv[1:]],
+                         cwd=script_dir)
         yield from server.recv_all()
-    launcher.wait()
 
 
 def main():

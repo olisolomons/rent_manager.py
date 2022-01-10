@@ -149,7 +149,7 @@ class InstallerApp(tk.Tk):
 
 def bootstrap_and_run():
     yield from bootstrap()
-    yield 'Installed launcher... Please wait for launcher to start'
+    yield 'Installed launcher...\nPlease wait for launcher to start'
     with simple_ipc.get_sock() as sock:
         server = simple_ipc.Server(sock)
         subprocess.Popen([venv_dir / 'bin' / 'python', 'main.py', str(server.port), *sys.argv[1:]],

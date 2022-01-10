@@ -9,24 +9,11 @@ from github import Github
 import requests
 from zipfile import ZipFile
 import io
-import appdirs
 from pathlib import Path
 import sys
 
-is_windows = sys.platform.startswith('win')
-
-rent_manager_dirs = appdirs.AppDirs('RentManager')
-user_cache = Path(rent_manager_dirs.user_cache_dir)
-
-conda_venv_dir = user_cache / 'python' / 'conda_venv'
-venv_dir = user_cache / 'python' / 'venv'
-
-if is_windows:
-    conda_venv_dir_python = conda_venv_dir / 'python.exe'
-    venv_dir_python_relative = Path('Scripts') / 'python.exe'
-else:
-    conda_venv_dir_python = conda_venv_dir / 'bin' / 'python'
-    venv_dir_python_relative = Path('bin') / 'python'
+import venv_management
+from venv_management import user_cache, venv_dir_python_relative, conda_venv_dir_python
 
 install_complete_marker = 'install_complete_marker'
 
@@ -91,11 +78,7 @@ def install_latest_release() -> Path:
 
     # prepare venv
     release_venv = release_dir / 'venv'
-    release_venv.mkdir()
-
-    run([conda_venv_dir_python, '-m', 'venv', release_venv], check=True)
-    run([release_venv / venv_dir_python_relative, '-m', 'pip', 'install', '-r', release_dir / 'requirements.txt'],
-        check=True)
+    venv_management.new_venv(release_venv, release_dir / 'requirements.txt')
 
     yield 'Finishing application installation'
     (release_dir / install_complete_marker).touch()

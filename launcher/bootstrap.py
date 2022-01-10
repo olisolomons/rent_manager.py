@@ -3,39 +3,18 @@ import threading
 import time
 import traceback
 
-import appdirs
-from pathlib import Path
 import shutil
 import subprocess
-from subprocess import run
-import sys
 import tkinter as tk
 from tkinter import ttk
 from tkinter.scrolledtext import ScrolledText
 import simple_ipc
-
-is_windows = sys.platform.startswith('win')
-
-rent_manager_dirs = appdirs.AppDirs('RentManager')
-user_cache = Path(rent_manager_dirs.user_cache_dir)
-script_dir = Path(__file__).parent
+import venv_management
+from venv_management import user_cache, script_dir, is_windows, conda_dir, conda_exec, conda_venv_dir, venv_dir
+import sys
+from subprocess import run
 
 bootstrap_complete_marker = user_cache / 'bootstrap_complete'
-
-conda_dir = user_cache / 'python' / 'miniconda'
-conda_venv_dir = user_cache / 'python' / 'conda_venv'
-venv_dir = user_cache / 'python' / 'venv'
-
-if is_windows:
-    conda_exec = conda_dir / '_conda.exe'
-    conda_venv_dir_python = conda_venv_dir / 'python.exe'
-    venv_dir_python = venv_dir / 'Scripts' / 'python.exe'
-else:
-    conda_exec = conda_dir / 'bin' / 'conda'
-    conda_venv_dir_python = conda_venv_dir / 'bin' / 'python'
-    venv_dir_python = venv_dir / 'bin' / 'python'
-
-requirements = script_dir / 'launcher_requirements.txt'
 
 
 def bootstrap():
@@ -58,9 +37,7 @@ def bootstrap():
     run([conda_exec, 'create', '-p', conda_venv_dir, 'python=3.9', '--yes'], check=True)
 
     yield 'Installing launcher'
-    venv_dir.mkdir(parents=True)
-    run([conda_venv_dir_python, '-m', 'venv', venv_dir], check=True)
-    run([venv_dir_python, '-m', 'pip', 'install', '-r', requirements], check=True)
+    venv_management.new_venv(venv_dir, script_dir / 'launcher_requirements.txt')
 
     yield 'Finishing launcher installation'
     bootstrap_complete_marker.touch()

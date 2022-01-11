@@ -33,7 +33,8 @@ def new_venv(destination, requirements):
 
     if is_windows:
         activate = conda_dir / 'Scripts' / 'activate.bat'
-        with Popen(f'cmd.exe "/K" {activate}', shell=True, stdin=subprocess.PIPE) as conda_shell:
+        pipes = {f'std{handle}': subprocess.PIPE for handle in ['in', 'out', 'err']}
+        with Popen(f'cmd.exe "/K" {activate}', shell=True, **pipes) as conda_shell:
             commands = [
                 [*pip, 'install', '--upgrade', 'pip'],
                 install,

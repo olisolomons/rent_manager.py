@@ -15,22 +15,25 @@ import sys
 from subprocess import run
 
 bootstrap_complete_marker = user_cache / 'bootstrap_complete'
-
+conda_installed_marker = user_cache / 'conda_installed'
 
 def bootstrap():
     if bootstrap_complete_marker.exists():
         return
+    
+    if not conda_installed_marker.exists():
+        yield 'Installing python'
 
-    yield 'Installing python'
+        shutil.rmtree(user_cache / 'python', ignore_errors=True)
+        (user_cache / 'python').mkdir(parents=True)
 
-    shutil.rmtree(user_cache / 'python', ignore_errors=True)
-    (user_cache / 'python').mkdir(parents=True)
-
-    if is_windows:
-        run([script_dir / 'miniconda.exe', '/InstallationType=JustMe', 'RegisterPython=0', '/S',
-             f'/D={conda_dir}'], check=True)
-    else:
-        run(['/usr/bin/env', 'sh', script_dir / 'miniconda.sh', '-b', '-p', conda_dir], check=True)
+        if is_windows:
+            run([script_dir / 'miniconda.exe', '/InstallationType=JustMe', 'RegisterPython=0', '/S',
+                 f'/D={conda_dir}'], check=True)
+        else:
+            run(['/usr/bin/env', 'sh', script_dir / 'miniconda.sh', '-b', '-p', conda_dir], check=True)
+        
+        conda_installed_marker.touch()
 
     yield 'Setting up launcher'
 

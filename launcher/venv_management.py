@@ -41,7 +41,7 @@ def new_venv(destination, requirements):
                 ['exit']
             ]
             for command in commands:
-                conda_shell.stdin.write(' '.join(command).encode())
+                conda_shell.stdin.write(' '.join(str(part) for part in command).encode())
                 conda_shell.stdin.write(b'\n')
                 conda_shell.stdin.flush()
     else:

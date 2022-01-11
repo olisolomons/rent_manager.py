@@ -34,6 +34,15 @@ def bootstrap():
             run(['/usr/bin/env', 'sh', script_dir / 'miniconda.sh', '-b', '-p', conda_dir], check=True)
         
         conda_installed_marker.touch()
+    else:
+        for item in (user_cache / 'python').iterdir():
+            if item == conda_dir:
+                continue
+            
+            if item.is_dir():
+                shutil.rmtree(item)
+            else:
+                item.unlink()
 
     yield 'Setting up launcher'
 

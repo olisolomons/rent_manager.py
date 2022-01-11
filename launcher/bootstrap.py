@@ -10,7 +10,7 @@ from tkinter import ttk
 from tkinter.scrolledtext import ScrolledText
 import simple_ipc
 import venv_management
-from venv_management import user_cache, script_dir, is_windows, conda_dir, conda_exec, conda_venv_dir, venv_dir
+from venv_management import user_cache, script_dir, is_windows, conda_dir, conda_exec, conda_venv_dir, venv_dir, venv_dir_python_relative
 import sys
 from subprocess import run
 

@@ -13,7 +13,7 @@ from pathlib import Path
 import sys
 
 import venv_management
-from venv_management import user_cache, venv_dir_python_relative, conda_venv_dir_python
+from venv_management import user_cache, venv_dir_python_relative, ActivatedVenvPopen
 
 install_complete_marker = 'install_complete_marker'
 
@@ -86,9 +86,13 @@ def install_latest_release() -> Path:
     return release_dir
 
 
-def run_application(release_dir: Path) -> Popen:
+def run_application(release_dir: Path) -> ActivatedVenvPopen:
     release_venv = release_dir / 'venv'
-    return Popen([release_venv / venv_dir_python_relative, 'main.py', *sys.argv[2:]], cwd=release_dir / 'src')
+
+    popen = ActivatedVenvPopen()
+    popen.run([release_venv / venv_dir_python_relative, 'main.py', *sys.argv[2:]], cwd=release_dir / 'src')
+
+    return popen
 
 
 T = TypeVar('T')
@@ -109,7 +113,7 @@ def generator_return_value(g: Generator[T, Any, U]) -> tuple[Generator[T, Any, U
     return proxy_generator(), get
 
 
-def install_and_launch() -> Generator[Union[str, dict], None, Popen]:
+def install_and_launch() -> Generator[Union[str, dict], None, ActivatedVenvPopen]:
     latest_release = get_latest_release()
     if latest_release is None:
         latest_release = yield from install_latest_release()

@@ -10,17 +10,19 @@ from tkinter import ttk
 from tkinter.scrolledtext import ScrolledText
 import simple_ipc
 import venv_management
-from venv_management import user_cache, script_dir, is_windows, conda_dir, conda_exec, conda_venv_dir, venv_dir, venv_dir_python_relative
+from venv_management import user_cache, script_dir, is_windows, conda_dir, conda_exec, conda_venv_dir, venv_dir, \
+    venv_dir_python_relative
 import sys
 from subprocess import run
 
 bootstrap_complete_marker = user_cache / 'bootstrap_complete'
 conda_installed_marker = user_cache / 'conda_installed'
 
+
 def bootstrap():
     if bootstrap_complete_marker.exists():
         return
-    
+
     if not conda_installed_marker.exists():
         yield 'Installing python'
 
@@ -32,13 +34,13 @@ def bootstrap():
                  f'/D={conda_dir}'], check=True)
         else:
             run(['/usr/bin/env', 'sh', script_dir / 'miniconda.sh', '-b', '-p', conda_dir], check=True)
-        
+
         conda_installed_marker.touch()
     else:
         for item in (user_cache / 'python').iterdir():
             if item == conda_dir:
                 continue
-            
+
             if item.is_dir():
                 shutil.rmtree(item)
             else:
@@ -141,8 +143,9 @@ def bootstrap_and_run():
     yield 'Installed launcher...\nPlease wait for launcher to start'
     with simple_ipc.get_sock() as sock:
         server = simple_ipc.Server(sock)
-        subprocess.Popen([venv_dir / venv_dir_python_relative, 'main.py', str(server.port), *sys.argv[1:]],
-                         cwd=script_dir)
+        popen = venv_management.ActivatedVenvPopen()
+        popen.run([venv_dir / venv_dir_python_relative, 'main.py', str(server.port), *sys.argv[1:]],
+                  cwd=script_dir)
         yield from server.recv_all()
 
 

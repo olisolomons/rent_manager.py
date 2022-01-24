@@ -10,8 +10,7 @@ from tkinter import ttk
 from tkinter.scrolledtext import ScrolledText
 import simple_ipc
 import venv_management
-from venv_management import user_cache, script_dir, is_windows, conda_dir, conda_exec, conda_venv_dir, venv_dir, \
-    venv_dir_python_relative
+from venv_management import user_cache, script_dir, is_windows, conda_dir, launcher_venv, venv_dir_python_relative
 import sys
 from subprocess import run
 
@@ -46,18 +45,11 @@ def bootstrap():
             else:
                 item.unlink()
 
-    yield 'Setting up launcher'
-
-    run([conda_exec, 'create', '-p', conda_venv_dir, 'python=3.9', '--yes'], check=True)
-
     yield 'Installing launcher'
-    venv_management.new_venv(venv_dir, script_dir / 'launcher_requirements.txt')
+    venv_management.new_venv(launcher_venv, script_dir / 'launcher_requirements.txt')
 
     yield 'Finishing launcher installation'
     bootstrap_complete_marker.touch()
-
-
-CLOSE_WINDOW = {'type': 'close_window'}
 
 
 def test_task():
@@ -96,7 +88,7 @@ class InstallerApp(tk.Tk):
             task = self.current_task_queue.get()
             if isinstance(task, str):
                 self.current_task.config(text=task)
-            elif task == CLOSE_WINDOW:
+            elif task == simple_ipc.CLOSE_WINDOW:
                 self.destroy()
                 return
 
@@ -128,7 +120,7 @@ class InstallerApp(tk.Tk):
         try:
             for current_step in task:
                 self.current_task_queue.put(current_step)
-            self.current_task_queue.put(CLOSE_WINDOW)
+            self.current_task_queue.put(simple_ipc.CLOSE_WINDOW)
         except Exception:
             self.current_task_queue.put({'type': 'error', 'traceback': traceback.format_exc()})
 
@@ -143,10 +135,15 @@ def bootstrap_and_run():
     yield 'Installed launcher...\nPlease wait for launcher to start'
     with simple_ipc.get_sock() as sock:
         server = simple_ipc.Server(sock)
-        popen = venv_management.ActivatedVenvPopen()
-        popen.run([venv_dir / venv_dir_python_relative, 'main.py', str(server.port), *sys.argv[1:]],
-                  cwd=script_dir)
+        launcher = venv_management.popen_in_venv(
+            launcher_venv,
+            [launcher_venv / venv_dir_python_relative, 'main.py', str(server.port), *sys.argv[1:]],
+            cwd=script_dir
+        )
         yield from server.recv_all()
+
+    if is_windows:
+        launcher.wait()
 
 
 def main():

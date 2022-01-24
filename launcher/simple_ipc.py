@@ -2,9 +2,7 @@ import json
 import socket
 import traceback
 from io import BytesIO
-from typing import Generator, Iterator
-
-import itertools
+from typing import Iterator
 
 
 def get_sock():
@@ -62,3 +60,5 @@ class Client:
         except Exception:
             tb = traceback.format_exc()
             self.send({'type': 'error', 'traceback': tb})
+
+CLOSE_WINDOW = {'type': 'close_window'}

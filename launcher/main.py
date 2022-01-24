@@ -13,7 +13,7 @@ from pathlib import Path
 import sys
 
 import venv_management
-from venv_management import user_cache, venv_dir_python_relative, ActivatedVenvPopen
+from venv_management import user_cache, venv_dir_python_relative
 
 install_complete_marker = 'install_complete_marker'
 
@@ -78,7 +78,7 @@ def install_latest_release() -> Path:
 
     # prepare venv
     release_venv = release_dir / 'venv'
-    venv_management.new_venv(release_venv, release_dir / 'requirements.txt')
+    venv_management.new_venv(release_venv, release_dir / 'requirements.txt', channels=['conda-forge'])
 
     yield 'Finishing application installation'
     (release_dir / install_complete_marker).touch()
@@ -86,11 +86,14 @@ def install_latest_release() -> Path:
     return release_dir
 
 
-def run_application(release_dir: Path) -> ActivatedVenvPopen:
+def run_application(release_dir: Path) -> Popen:
     release_venv = release_dir / 'venv'
 
-    popen = ActivatedVenvPopen()
-    popen.run([release_venv / venv_dir_python_relative, 'main.py', *sys.argv[2:]], cwd=release_dir / 'src')
+    popen = venv_management.popen_in_venv(
+        release_venv,
+        [release_venv / venv_dir_python_relative, 'main.py', *sys.argv[2:]],
+        cwd=release_dir / 'src'
+    )
 
     return popen
 
@@ -113,7 +116,7 @@ def generator_return_value(g: Generator[T, Any, U]) -> tuple[Generator[T, Any, U
     return proxy_generator(), get
 
 
-def install_and_launch() -> Generator[Union[str, dict], None, ActivatedVenvPopen]:
+def install_and_launch() -> Generator[Union[str, dict], None, Popen]:
     latest_release = get_latest_release()
     if latest_release is None:
         latest_release = yield from install_latest_release()
@@ -134,7 +137,6 @@ def test_task2():
 
 
 if __name__ == '__main__':
-    print(f'{sys.argv=}')
     port = int(sys.argv[1])
     with simple_ipc.get_sock() as sock:
         client = simple_ipc.Client(sock, port)

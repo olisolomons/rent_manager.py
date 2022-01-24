@@ -1,12 +1,10 @@
 import itertools
 import subprocess
 import sys
-import threading
 from pathlib import Path
-from typing import Optional
+from subprocess import run, Popen
 
 import appdirs
-from subprocess import run, Popen
 
 is_windows = sys.platform.startswith('win')
 
@@ -35,17 +33,7 @@ def new_venv(destination, requirements, channels=()):
 
 
 def popen_in_venv(venv, command: list, **kwargs) -> Popen:
-    streams = ('in', 'out', 'err')
-    for stream in streams:
-        kwargs['std' + stream] = subprocess.PIPE
-    proc = Popen([conda_exec, 'run', '-p', venv, *command], **kwargs)
-    for stream in ('out', 'err'):
-        def echo(stream=stream):
-            out = getattr(proc, 'std' + stream)
-            for line in out:
-                print(line.decode())
+    if is_windows:
+        kwargs['creationflags'] = subprocess.CREATE_NO_WINDOW
 
-        t = threading.Thread(target=echo)
-        t.start()
-
-    return proc
+    return Popen([conda_exec, 'run', '-p', venv, *command], **kwargs)

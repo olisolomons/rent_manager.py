@@ -9,6 +9,37 @@ def get_sock():
     return socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 
+class ChannelClosedException(Exception):
+    pass
+
+
+class Channel:
+    def __init__(self, sock: socket.socket):
+        self.sock = sock
+
+    def send(self, data):
+        msg = json.dumps(data).encode()
+        self.sock.sendall(len(msg).to_bytes(4, 'big', signed=False))
+        self.sock.sendall(msg)
+
+    def recv(self):
+        msg_len_bytes = self.sock.recv(4)
+        if not msg_len_bytes:
+            # connection closed
+            raise ChannelClosedException()
+        msg_len = int.from_bytes(msg_len_bytes, 'big', signed=False)
+        with BytesIO() as buffer:
+            received_len = 0
+            while received_len < msg_len:
+                resp = self.sock.recv(min(msg_len - received_len, 512))
+                received_len += len(resp)
+                if not resp:
+                    # connection closed
+                    raise ChannelClosedException()
+                buffer.write(resp)
+            return json.loads(buffer.getvalue().decode())
+
+
 class Server:
     def __init__(self, sock: socket.socket) -> None:
         self.sock = sock
@@ -19,36 +50,24 @@ class Server:
     def port(self):
         return self.sock.getsockname()[1]
 
-    def recv_all(self):
-        # adapted from https://stackoverflow.com/a/29024384/6744133
+    def accept(self):
         conn, addr = self.sock.accept()
+        return Channel(conn)
+
+    def recv_all(self, channel=None):
+        if channel is None:
+            channel = self.accept()
         while True:
-            msg_len_bytes = conn.recv(4)
-            if not msg_len_bytes:
-                # connection closed
+            try:
+                yield channel.recv()
+            except ChannelClosedException:
                 return
-            msg_len = int.from_bytes(msg_len_bytes, 'big', signed=False)
-            with BytesIO() as buffer:
-                received_len = 0
-                while received_len < msg_len:
-                    resp = conn.recv(min(msg_len - received_len, 512))
-                    received_len += len(resp)
-                    if not resp:
-                        # connection closed
-                        return
-                    buffer.write(resp)
-                yield json.loads(buffer.getvalue().decode())
 
 
-class Client:
+class Client(Channel):
     def __init__(self, sock: socket.socket, port: int):
-        self.sock = sock
+        super().__init__(sock)
         self.sock.connect(('localhost', port))
-
-    def send(self, data):
-        msg = json.dumps(data).encode()
-        self.sock.sendall(len(msg).to_bytes(4, 'big', signed=False))
-        self.sock.sendall(msg)
 
     def run(self, it: Iterator):
         try:
@@ -60,5 +79,6 @@ class Client:
         except Exception:
             tb = traceback.format_exc()
             self.send({'type': 'error', 'traceback': tb})
+
 
 CLOSE_WINDOW = {'type': 'close_window'}

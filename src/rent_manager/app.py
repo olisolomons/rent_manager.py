@@ -1,25 +1,26 @@
 import dataclasses
-import sys
-from pathlib import Path
-from typing import Callable, Optional
 import enum
-
 import tkinter as tk
+from pathlib import Path
 from tkinter import filedialog
 from tkinter import simpledialog
+from typing import Callable, Optional, TYPE_CHECKING
+
+import sys
 
 import dataclass_json
 import tk_utils
+from tk_utils import ResettableTimer
 from traits.core import ViewWrapper
-from traits.undo_manager import UndoManager
 from traits.dialog import data_dialog
-from . import config
+from traits.undo_manager import UndoManager
+from . import config, updater
 from .menu import DocumentManager, BasicEditorMenu
 from .state.rent_arrangement_data import RentArrangementData
-
 from .state.rent_manager_state import RentManagerState, RentCalculations
 
-from tk_utils import ResettableTimer
+if TYPE_CHECKING:
+    import simple_ipc
 
 
 class UnsavedChangesResult(enum.Enum):
@@ -39,9 +40,10 @@ def unsaved_changes_dialog(parent):
 
 
 class RentManagerApp(DocumentManager):
-    def __init__(self, parent) -> None:
+    def __init__(self, parent, *, launcher_client: 'Optional[simple_ipc.Client]' = None) -> None:
         self._frame = tk.Frame(parent)
 
+        self.launcher_client = launcher_client
         self._frame.grid_columnconfigure(0, weight=1)
         self._frame.grid_rowconfigure(0, weight=1)
 
@@ -84,6 +86,15 @@ class RentManagerApp(DocumentManager):
                 super().__init__(parent, rent_manager_self)
 
                 self.edit.add_command(label='Edit rent arrangements', command=rent_manager_self.edit_rent_arrangements)
+
+                self.version = tk.Menu(self, tearoff=False)
+                self.add_cascade(label='Version', menu=self.version)
+
+                version_label = rent_manager_self.get_version()
+                self.version.add_command(label=version_label or 'Unknown version')
+                self.version.add_command(label='Check for updates', command=rent_manager_self.check_for_updates)
+                if rent_manager_self.launcher_client is None:
+                    self.version.entryconfigure(1, state=tk.DISABLED)
 
         self.menu = RentManagerMenu
 
@@ -223,12 +234,12 @@ class RentManagerApp(DocumentManager):
         if file_path is None:
             return
 
+        self.open_path(file_path)
+
+    def open_path(self, file_path):
         self.file_path = file_path
-
         self.calculation_timer.cancel()
-
         self.view_widget.destroy()
-
         with open(file_path, 'r') as f:
             data = dataclass_json.load(RentManagerState, f)
             self.populate_from_data(data)
@@ -263,3 +274,16 @@ class RentManagerApp(DocumentManager):
             self.data.rent_arrangement_data = new_rent_arrangement_data
             self.notify_arrangement_data_change(new_rent_arrangement_data)
             self.on_change(None)
+
+    def check_for_updates(self):
+        updater.check_for_updates(self._frame, self.launcher_client, self.get_version())
+
+    @staticmethod
+    def get_version():
+        parts = Path(__file__).parts
+        try:
+            releases_index = parts.index('releases')
+        except ValueError:
+            return None
+
+        return parts[releases_index + 1]

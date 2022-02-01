@@ -1,18 +1,19 @@
 import queue
-import threading
-import time
-import traceback
-
 import shutil
 import subprocess
+import threading
 import tkinter as tk
+import traceback
+from subprocess import run
 from tkinter import ttk
 from tkinter.scrolledtext import ScrolledText
+
+import sys
+import time
+
 import simple_ipc
 import venv_management
 from venv_management import user_cache, script_dir, is_windows, conda_dir, launcher_venv, venv_dir_python_relative
-import sys
-from subprocess import run
 
 bootstrap_complete_marker = user_cache / 'bootstrap_complete'
 conda_installed_marker = user_cache / 'conda_installed'
@@ -59,7 +60,7 @@ def test_task():
     time.sleep(3)
     with simple_ipc.get_sock() as sock:
         server = simple_ipc.Server(sock)
-        proc = subprocess.Popen(['/usr/bin/env', 'python3', 'main.py', str(server.port)])
+        proc = subprocess.Popen(['/usr/bin/env', 'python3', 'launcher.py', str(server.port)])
         yield from server.recv_all()
     proc.wait()
 
@@ -137,7 +138,7 @@ def bootstrap_and_run():
         server = simple_ipc.Server(sock)
         launcher = venv_management.popen_in_venv(
             launcher_venv,
-            [launcher_venv / venv_dir_python_relative, 'main.py', str(server.port), *sys.argv[1:]],
+            [launcher_venv / venv_dir_python_relative, 'launcher.py', str(server.port), *sys.argv[1:]],
             cwd=script_dir
         )
         yield from server.recv_all()

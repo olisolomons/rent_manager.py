@@ -3,6 +3,7 @@ import enum
 import tkinter as tk
 from pathlib import Path
 from tkinter import filedialog
+from tkinter import messagebox
 from tkinter import simpledialog
 from typing import Callable, Optional, TYPE_CHECKING
 
@@ -181,8 +182,8 @@ class RentManagerApp(DocumentManager):
     def get_save_state(self):
         view_state = self.view.get_state()
         if view_state is None:
-            simpledialog.messagebox.showerror('Cannot save',
-                                              'Please finish entering all data before saving the document')
+            messagebox.showerror('Cannot save',
+                                 'Please finish entering all data before saving the document')
         return view_state
 
     def save(self, state=None):

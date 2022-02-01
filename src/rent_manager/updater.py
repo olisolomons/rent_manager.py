@@ -29,6 +29,7 @@ def check_for_updates(root: tk.Misc, client: 'simple_ipc.Channel', current_versi
                     super().__init__(root)
                     self.title('Updates')
                     self.geometry('400x200')
+                    self.focus_set()
 
                     self.progress = None
                     self.body_frame: Optional[tk.Frame] = None

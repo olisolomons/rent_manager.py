@@ -189,7 +189,7 @@ def main():
 
     if args.port:
         with simple_ipc.get_sock() as installer_client_sock:
-            client = simple_ipc.Client(installer_client_sock, args.port)
+            client = simple_ipc.Client(installer_client_sock, int(args.port))
 
             run_with_server(client.run)
     else:

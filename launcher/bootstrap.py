@@ -138,7 +138,7 @@ def bootstrap_and_run():
         server = simple_ipc.Server(sock)
         launcher = venv_management.popen_in_venv(
             launcher_venv,
-            [launcher_venv / venv_dir_python_relative, 'launcher.py', str(server.port), *sys.argv[1:]],
+            [launcher_venv / venv_dir_python_relative, 'launcher.py', '--port', str(server.port), *sys.argv[1:]],
             cwd=script_dir
         )
         yield from server.recv_all()

@@ -41,7 +41,7 @@ jobs:
             CMD_BUILD: >
               cd launcher/ &&
               wget -q https://repo.anaconda.com/miniconda/Miniconda3-py39_4.9.2-MacOSX-x86_64.sh -O /tmp/miniconda.sh &&
-              env MACOSX_DEPLOYMENT_TARGET="10.9" python3 -m PyInstaller -F -w -n rent_manager --add-data "main.py:." --add-data "simple_ipc.py:." --add-data "venv_management.py:." --add-data "../launcher_requirements.txt:." --add-data "/tmp/miniconda.sh:." bootstrap.py &&
+              env MACOSX_DEPLOYMENT_TARGET="10.9" python3 -m PyInstaller -F -w -n rent_manager --add-data "launcher.py:." --add-data "simple_ipc.py:." --add-data "venv_management.py:." --add-data "../launcher_requirements.txt:." --add-data "/tmp/miniconda.sh:." bootstrap.py &&
               cd dist/ &&
               zip -r9 rent_manager rent_manager.app/
             OUT_FILE_NAME: rent_manager.zip
@@ -53,7 +53,7 @@ jobs:
             CMD_BUILD: >
               cd launcher/ &&
               C:\msys64\usr\bin\wget.exe -q https://repo.anaconda.com/miniconda/Miniconda3-py39_4.9.2-Windows-x86_64.exe -O miniconda.exe &&
-              pyinstaller -F -w -n rent_manager --add-data "main.py;." --add-data "simple_ipc.py;." --add-data "venv_management.py;." --add-data "../launcher_requirements.txt;." --add-data "miniconda.exe;." bootstrap.py
+              pyinstaller -F -w -n rent_manager --add-data "launcher.py;." --add-data "simple_ipc.py;." --add-data "venv_management.py;." --add-data "../launcher_requirements.txt;." --add-data "miniconda.exe;." bootstrap.py
             OUT_FILE_NAME: rent_manager.exe
             ASSET_MIME: application/vnd.microsoft.portable-executable
             OVERRIDE_PYTHON: false

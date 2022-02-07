@@ -121,6 +121,8 @@ class InstallerApp(tk.Tk):
         try:
             for current_step in task:
                 self.current_task_queue.put(current_step)
+                if current_step == simple_ipc.CLOSE_WINDOW:
+                    return
             self.current_task_queue.put(simple_ipc.CLOSE_WINDOW)
         except Exception:
             self.current_task_queue.put({'type': 'error', 'traceback': traceback.format_exc()})

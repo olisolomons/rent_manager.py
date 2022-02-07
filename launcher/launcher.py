@@ -139,7 +139,7 @@ def install_and_launch(file: str, app_server_port: int) -> Generator[Union[str, 
     latest_release = get_latest_installed_release()
     if latest_release is None:
         latest_release = yield from install_latest_release()
-    yield {'type': 'close_window'}
+    yield simple_ipc.CLOSE_WINDOW
     return run_application(latest_release, file, app_server_port)
 
 

@@ -73,7 +73,6 @@ class Client(Channel):
         try:
             for item in it:
                 self.send(item)
-            self.send({'type': 'close'})
         except OSError as e:
             raise e
         except Exception:

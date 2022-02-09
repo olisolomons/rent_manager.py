@@ -8,6 +8,7 @@ from tkinter.scrolledtext import ScrolledText
 from typing import Optional
 
 import tk_utils
+from venv_management import rent_manager_dirs
 
 if typing.TYPE_CHECKING:
     import simple_ipc
@@ -129,7 +130,8 @@ def check_for_updates(root: tk.Misc, client: 'simple_ipc.Channel', current_versi
 
                     message = ScrolledText(self.body_frame)
                     message.insert(tk.CURRENT, f'An error has occurred. '
-                                               f'Please copy this text and send it to the developer:\n\n{error_traceback}')
+                                               f'Please copy this text and send it to the developer:\n\n'
+                                               f'{error_traceback}\n{rent_manager_dirs.user_log_dir=}')
                     message.grid(row=0, column=0, sticky='NESW')
                     message.config(state=tk.DISABLED)
                     message.bind("<1>", lambda _event: message.focus_set())

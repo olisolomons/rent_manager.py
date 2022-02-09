@@ -1,5 +1,7 @@
 import argparse
+import logging
 import tkinter as tk
+from logging.handlers import TimedRotatingFileHandler
 from pathlib import Path
 from PIL import Image
 
@@ -7,10 +9,22 @@ import sys
 
 import report_generator
 from rent_manager.app import RentManagerApp
+from rent_manager.config import rent_manager_dirs
 
 parser = argparse.ArgumentParser()
 parser.add_argument('file', help='the file to open', nargs='?')
 parser.add_argument('--port', help='port for communicating with launcher process')
+
+log_dir = Path(rent_manager_dirs.user_log_dir)
+log_dir.mkdir(parents=True, exist_ok=True)
+
+handler = TimedRotatingFileHandler(filename=log_dir / 'app', when='D', backupCount=15, encoding='utf-8', delay=False)
+
+logging.basicConfig(
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    handlers=[handler],
+    level=logging.INFO
+)
 
 
 def set_icon(root: tk.Tk) -> None:

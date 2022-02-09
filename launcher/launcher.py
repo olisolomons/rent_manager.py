@@ -1,25 +1,20 @@
 import argparse
+import logging
 import re
 import shutil
 import traceback
+from logging.handlers import TimedRotatingFileHandler
 from subprocess import Popen
 from typing import Optional, Generator, Union, TypeVar, Any, Callable
 
 import simple_ipc
-
-try:
-    from github import Github
-    import requests
-except ImportError:
-    Github = None
-    requests = None
 
 from zipfile import ZipFile
 import io
 from pathlib import Path
 
 import venv_management
-from venv_management import user_cache, venv_dir_python_relative
+from venv_management import user_cache, venv_dir_python_relative, rent_manager_dirs
 
 install_complete_marker = 'install_complete_marker'
 
@@ -27,6 +22,19 @@ parser = argparse.ArgumentParser()
 parser.add_argument('file', help='the file to open', nargs='?')
 parser.add_argument('--port', help='port for communicating with installer process')
 parser.add_argument('--no-app', action='store_true', help='don\'t run the app, but instead print the app_server port')
+
+log_dir = Path(rent_manager_dirs.user_log_dir)
+log_dir.mkdir(parents=True, exist_ok=True)
+
+handler = TimedRotatingFileHandler(
+    filename=log_dir / 'launcher', when='D', backupCount=15, encoding='utf-8', delay=False
+)
+
+logging.basicConfig(
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    handlers=[handler],
+    level=logging.INFO
+)
 
 
 def parse_release(release_name: str) -> list[int]:
@@ -56,6 +64,7 @@ def get_latest_installed_release() -> Optional[Path]:
 
 
 def get_latest_release():
+    from github import Github
     g = Github()
     repo = g.get_repo('olisolomons/rent_manager.py')
     return next(iter(repo.get_releases()))
@@ -66,6 +75,8 @@ def install_latest_release() -> Generator[str, Any, Popen]:
     Install the latest_release release
     :return: The directory into which the release was installed
     """
+    import requests
+
     yield 'Finding latest release'
     release = get_latest_release()
 

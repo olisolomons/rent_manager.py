@@ -1,9 +1,12 @@
+import logging
 import queue
 import shutil
 import subprocess
 import threading
 import tkinter as tk
 import traceback
+from logging.handlers import TimedRotatingFileHandler
+from pathlib import Path
 from subprocess import run
 from tkinter import ttk
 from tkinter.scrolledtext import ScrolledText
@@ -14,9 +17,21 @@ import time
 import simple_ipc
 import venv_management
 from venv_management import user_cache, script_dir, is_windows, conda_dir, launcher_venv, venv_dir_python_relative
+from venv_management import rent_manager_dirs
 
 bootstrap_complete_marker = user_cache / 'bootstrap_complete'
 conda_installed_marker = user_cache / 'conda_installed'
+
+log_dir = Path(rent_manager_dirs.user_log_dir)
+log_dir.mkdir(parents=True, exist_ok=True)
+
+handler = TimedRotatingFileHandler(filename=log_dir / 'boot', when='D', backupCount=15, encoding='utf-8', delay=False)
+
+logging.basicConfig(
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    handlers=[handler],
+    level=logging.INFO
+)
 
 
 def bootstrap():
@@ -30,10 +45,11 @@ def bootstrap():
         (user_cache / 'python').mkdir(parents=True)
 
         if is_windows:
-            run([script_dir / 'miniconda.exe', '/InstallationType=JustMe', 'RegisterPython=0', '/S',
-                 f'/D={conda_dir}'], check=True)
+            venv_management.logged_run([
+                script_dir / 'miniconda.exe', '/InstallationType=JustMe', 'RegisterPython=0', '/S', f'/D={conda_dir}'
+            ])
         else:
-            run(['/usr/bin/env', 'sh', script_dir / 'miniconda.sh', '-b', '-p', conda_dir], check=True)
+            venv_management.logged_run(['/usr/bin/env', 'sh', script_dir / 'miniconda.sh', '-b', '-p', conda_dir])
 
         conda_installed_marker.touch()
     else:
@@ -100,7 +116,8 @@ class InstallerApp(tk.Tk):
 
                 message = ScrolledText(self)
                 message.insert(tk.CURRENT, f'An error has occurred. '
-                                           f'Please copy this text and send it to the developer:\n\n{tb}')
+                                           f'Please copy this text and send it to the developer:\n\n'
+                                           f'{tb}\n{rent_manager_dirs.user_log_dir=}')
                 message.grid(row=0, column=0, sticky='NESW')
                 message.config(state=tk.DISABLED)
                 message.bind("<1>", lambda _event: message.focus_set())

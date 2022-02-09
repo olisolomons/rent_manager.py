@@ -50,7 +50,7 @@ def popen_in_venv(venv, command: list, **kwargs) -> Popen:
 
 def logged_run(args, **kwargs):
     with LoggedPopen(args, **kwargs) as process:
-        pass
+        process.wait()
 
     return_code = process.poll()
     if return_code:

@@ -19,6 +19,7 @@ import venv_management
 from venv_management import user_cache, script_dir, is_windows, conda_dir, launcher_venv, venv_dir_python_relative
 from venv_management import rent_manager_dirs
 
+
 bootstrap_complete_marker = user_cache / 'bootstrap_complete'
 conda_installed_marker = user_cache / 'conda_installed'
 
@@ -28,7 +29,7 @@ log_dir.mkdir(parents=True, exist_ok=True)
 handler = TimedRotatingFileHandler(filename=log_dir / 'boot', when='D', backupCount=15, encoding='utf-8', delay=False)
 
 logging.basicConfig(
-    format='%(asctime)s - %(levelname)s - %(message)s',
+    format='[%(asctime)s] [%(levelname)s] [%(name)s] - %(message)s',
     handlers=[handler, logging.StreamHandler(sys.stdout)],
     level=logging.INFO
 )

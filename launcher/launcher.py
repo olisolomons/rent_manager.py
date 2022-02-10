@@ -31,7 +31,7 @@ handler = TimedRotatingFileHandler(
 )
 
 logging.basicConfig(
-    format='%(asctime)s - %(levelname)s - %(message)s',
+    format='[%(asctime)s] [%(levelname)s] [%(name)s] - %(message)s',
     handlers=[handler],
     level=logging.INFO
 )

@@ -21,7 +21,7 @@ log_dir.mkdir(parents=True, exist_ok=True)
 handler = TimedRotatingFileHandler(filename=log_dir / 'app', when='D', backupCount=15, encoding='utf-8', delay=False)
 
 logging.basicConfig(
-    format='%(asctime)s - %(levelname)s - %(message)s',
+    format='[%(asctime)s] [%(levelname)s] [%(name)s] - %(message)s',
     handlers=[handler],
     level=logging.INFO
 )

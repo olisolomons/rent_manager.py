@@ -61,16 +61,19 @@ class LoggedPopen(Popen):
     def __init__(self, args, **kwargs):
         kwargs['stdout'] = subprocess.PIPE
         kwargs['stderr'] = subprocess.PIPE
+        kwargs['text'] = True
         super().__init__(args, **kwargs)
 
         def do_log(stream, level):
             with stream:
-                for line in iter(stream.readline, b''):
-                    logging.log(level, line)
+                line: str
+                for line in iter(stream.readline, ''):
+                    logging.log(level, line.rstrip())
+            logging.log(level, '[CLOSED]')
 
         self.stdout_thread = threading.Thread(target=do_log, args=(self.stdout, LOG_STDOUT))
         self.stdout_thread.start()
-        self.stderr_thread = threading.Thread(target=do_log, args=(self.stdout, LOG_STDERR))
+        self.stderr_thread = threading.Thread(target=do_log, args=(self.stderr, LOG_STDERR))
         self.stderr_thread.start()
 
     def wait(self, timeout=None) -> int:
@@ -78,3 +81,6 @@ class LoggedPopen(Popen):
         self.stderr_thread.join()
 
         return super().wait(timeout)
+
+    def detach(self):
+        pass

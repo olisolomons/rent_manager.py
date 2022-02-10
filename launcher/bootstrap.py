@@ -29,7 +29,7 @@ handler = TimedRotatingFileHandler(filename=log_dir / 'boot', when='D', backupCo
 
 logging.basicConfig(
     format='%(asctime)s - %(levelname)s - %(message)s',
-    handlers=[handler],
+    handlers=[handler, logging.StreamHandler(sys.stdout)],
     level=logging.INFO
 )
 
@@ -70,15 +70,37 @@ def bootstrap():
 
 
 def test_task():
+    from venv_management import LoggedPopen
+    from shutil import which
     yield 'Task a'
-    time.sleep(1)
+    time.sleep(0.5)
     yield 'Task b'
-    time.sleep(3)
+    time.sleep(0.5)
     with simple_ipc.get_sock() as sock:
         server = simple_ipc.Server(sock)
-        proc = subprocess.Popen(['/usr/bin/env', 'python3', 'launcher.py', str(server.port)])
-        yield from server.recv_all()
-    proc.wait()
+        code = """
+import simple_ipc
+import sys
+import time
+
+print(sys.argv)
+
+def test():
+    yield 'Alien'
+    time.sleep(0.5)
+    yield 'Thing'
+    time.sleep(0.5)
+    yield simple_ipc.CLOSE_WINDOW
+
+with simple_ipc.get_sock() as installer_client_sock:
+    client = simple_ipc.Client(installer_client_sock, int(sys.argv[1]))
+    client.run(test())
+    time.sleep(10)
+
+"""
+        proc = LoggedPopen([which('python3'), '-c', code, str(server.port)])
+        for msg in server.recv_all():
+            print(f'{msg=}')
 
 
 class InstallerApp(tk.Tk):
@@ -167,7 +189,7 @@ def bootstrap_and_run():
 
 
 def main():
-    app = InstallerApp(bootstrap_and_run)
+    app = InstallerApp(test_task)
     app.geometry('300x200')
 
     app.mainloop()

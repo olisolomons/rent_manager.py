@@ -51,7 +51,10 @@ def main() -> None:
 
     w, h = 1200, 1000
 
-    root = tk.Tk()
+    if sys.platform.startswith('linux'):
+        root = tk.Tk(className='rent manager')
+    else:
+        root = tk.Tk()
     root.geometry(f'{w}x{h}')
     root.title('Rent Manager')
     set_icon(root)

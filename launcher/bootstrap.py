@@ -200,7 +200,7 @@ def bootstrap_and_run():
 
 
 def main():
-    app = InstallerApp(test_task)
+    app = InstallerApp(bootstrap_and_run)
     app.geometry('300x200')
 
     app.mainloop()

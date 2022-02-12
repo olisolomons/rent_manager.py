@@ -62,6 +62,7 @@ class AsyncLoggedProcess:
         detach = asyncio.Event()
 
         logger = logging.getLogger().getChild(f'proc{process.pid}')
+        logger.info(f'started process with args {[str(arg) for arg in args]}')
 
         async def do_log(stream, level):
             try:

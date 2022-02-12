@@ -197,6 +197,8 @@ def bootstrap_and_run():
 
     if is_windows:
         launcher.wait()
+    else:
+        launcher.detach()
 
 
 def main():

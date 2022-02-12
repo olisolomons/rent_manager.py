@@ -32,7 +32,7 @@ else:
     venv_dir_python_relative = Path('bin') / 'python'
 
 
-async def new_venv(destination, requirements, channels=()):
+def new_venv(destination, requirements, channels=()):
     destination.mkdir(parents=True)
     LoggedProcess.run([conda_exec, 'create', '-p', destination, 'python=3.9', '--yes', '--no-default-packages'])
     LoggedProcess.run([

@@ -1,13 +1,11 @@
 import logging
 import queue
 import shutil
-import subprocess
 import threading
 import tkinter as tk
 import traceback
 from logging.handlers import TimedRotatingFileHandler
 from pathlib import Path
-from subprocess import run
 from tkinter import ttk
 from tkinter.scrolledtext import ScrolledText
 
@@ -17,7 +15,7 @@ import time
 import simple_ipc
 import venv_management
 from venv_management import user_cache, script_dir, is_windows, conda_dir, launcher_venv, venv_dir_python_relative
-from venv_management import rent_manager_dirs
+from venv_management import rent_manager_dirs, LoggedProcess
 
 
 bootstrap_complete_marker = user_cache / 'bootstrap_complete'
@@ -46,11 +44,11 @@ def bootstrap():
         (user_cache / 'python').mkdir(parents=True)
 
         if is_windows:
-            venv_management.logged_run([
+            LoggedProcess.run([
                 script_dir / 'miniconda.exe', '/InstallationType=JustMe', 'RegisterPython=0', '/S', f'/D={conda_dir}'
             ])
         else:
-            venv_management.logged_run(['/usr/bin/env', 'sh', script_dir / 'miniconda.sh', '-b', '-p', conda_dir])
+            LoggedProcess.run(['/usr/bin/env', 'sh', script_dir / 'miniconda.sh', '-b', '-p', conda_dir])
 
         conda_installed_marker.touch()
     else:
@@ -71,7 +69,6 @@ def bootstrap():
 
 
 def test_task():
-    from venv_management import LoggedPopen
     from shutil import which
     yield 'Task a'
     time.sleep(0.5)
@@ -83,6 +80,8 @@ def test_task():
 import simple_ipc
 import sys
 import time
+import tkinter as tk
+from threading import Thread
 
 print(sys.argv)
 
@@ -93,15 +92,26 @@ def test():
     time.sleep(0.5)
     yield simple_ipc.CLOSE_WINDOW
 
-with simple_ipc.get_sock() as installer_client_sock:
-    client = simple_ipc.Client(installer_client_sock, int(sys.argv[1]))
-    client.run(test())
-    time.sleep(10)
+def msgs():
+    with simple_ipc.get_sock() as installer_client_sock:
+        client = simple_ipc.Client(installer_client_sock, int(sys.argv[1]))
+        client.run(test())
+
+t=Thread(target=msgs)
+root=tk.Tk()
+root.after(500,lambda:print('stuff'))
+root.after(1000,t.start)
+
+root.after(5000,root.destroy)
+
+root.mainloop()
+
 
 """
-        proc = LoggedPopen([which('python3'), '-c', code, str(server.port)])
+        proc = LoggedProcess.popen([which('python3'), '-c', code, str(server.port)])
         for msg in server.recv_all():
             print(f'{msg=}')
+    proc.wait()
 
 
 class InstallerApp(tk.Tk):

@@ -1,10 +1,12 @@
+import asyncio
 import itertools
+import queue
 import subprocess
 import sys
 import threading
 from pathlib import Path
-from subprocess import Popen
 import logging
+from typing import Optional
 
 import appdirs
 
@@ -22,8 +24,6 @@ logging.addLevelName(LOG_STDERR, 'STDERR')
 LOG_STDOUT = logging.INFO + 1
 logging.addLevelName(LOG_STDOUT, 'STDOUT')
 
-logger = logging.getLogger()
-
 if is_windows:
     conda_exec = conda_dir / '_conda.exe'
     venv_dir_python_relative = 'python.exe'
@@ -32,55 +32,127 @@ else:
     venv_dir_python_relative = Path('bin') / 'python'
 
 
-def new_venv(destination, requirements, channels=()):
+async def new_venv(destination, requirements, channels=()):
     destination.mkdir(parents=True)
-    logged_run([conda_exec, 'create', '-p', destination, 'python=3.9', '--yes', '--no-default-packages'])
-    logged_run([
+    LoggedProcess.run([conda_exec, 'create', '-p', destination, 'python=3.9', '--yes', '--no-default-packages'])
+    LoggedProcess.run([
         conda_exec, 'install', '-p', destination, '--file', requirements, '--yes',
         *itertools.chain.from_iterable(('-c', channel) for channel in channels)
     ])
 
 
-def popen_in_venv(venv, command: list, **kwargs) -> Popen:
+def popen_in_venv(venv, command: list, **kwargs) -> 'LoggedProcess':
     if is_windows:
         kwargs['creationflags'] = subprocess.CREATE_NO_WINDOW
 
-    return LoggedPopen([conda_exec, 'run', '-p', venv, *command], **kwargs)
+    return LoggedProcess.popen([conda_exec, 'run', '-p', venv, *command], **kwargs)
 
 
-def logged_run(args, **kwargs):
-    with LoggedPopen(args, **kwargs) as process:
-        pass
+class AsyncLoggedProcess:
+    def __init__(self, process: asyncio.subprocess.Process, stdout: asyncio.Task, stderr: asyncio.Task,
+                 detach_event: asyncio.Event):
+        self.process = process
+        self.stdout = stdout
+        self.stderr = stderr
+        self.detach_event = detach_event
 
-    return_code = process.poll()
-    if return_code:
-        raise subprocess.CalledProcessError(return_code, args)
+    @classmethod
+    async def popen(cls, args, **kwargs) -> 'AsyncLoggedProcess':
+        process = await asyncio.create_subprocess_exec(*args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, **kwargs)
+        detach = asyncio.Event()
+
+        logger = logging.getLogger().getChild(f'proc{process.pid}')
+
+        async def do_log(stream, level):
+            try:
+                while True:
+                    line: str = (await stream.readline()).decode()
+                    if not line:
+                        break
+                    logger.log(level, line.rstrip())
+                logger.log(level, '[CLOSED]')
+            except asyncio.CancelledError:
+                logger.log(level, '[DETACHED]')
+                raise
+
+        async def terminable(coro):
+            task = asyncio.create_task(coro)
+            detached = asyncio.create_task(detach.wait())
+
+            await asyncio.wait([task, detached], return_when=asyncio.FIRST_COMPLETED)
+            task.cancel()
+
+        stdout_task = asyncio.create_task(terminable(do_log(process.stdout, LOG_STDOUT)))
+        stderr_task = asyncio.create_task(terminable(do_log(process.stderr, LOG_STDERR)))
+
+        return cls(process, stdout_task, stderr_task, detach)
+
+    async def wait(self) -> int:
+        await asyncio.gather(self.stdout, self.stderr)
+
+        return await self.process.wait()
+
+    async def detach(self):
+        self.detach_event.set()
+        await asyncio.gather(self.stdout, self.stderr)
+
+    @classmethod
+    async def run(cls, args, **kwargs):
+        process = await cls.popen(args, **kwargs)
+        return_code = await process.wait()
+        if return_code:
+            raise subprocess.CalledProcessError(return_code, args)
+
+        return return_code
 
 
-class LoggedPopen(Popen):
-    def __init__(self, args, **kwargs):
-        kwargs['stdout'] = subprocess.PIPE
-        kwargs['stderr'] = subprocess.PIPE
-        kwargs['text'] = True
-        super().__init__(args, **kwargs)
+class LoggedProcess:
+    """
+    Wrapper
+    """
 
-        def do_log(stream, level):
-            with stream:
-                line: str
-                for line in iter(stream.readline, ''):
-                    logging.log(level, line.rstrip())
-            logging.log(level, '[CLOSED]')
+    def __init__(self, thread: threading.Thread, to_async: queue.Queue, from_async: queue.Queue,
+                 async_process: AsyncLoggedProcess):
+        self.async_process = async_process
+        self.from_async = from_async
+        self.to_async = to_async
+        self.thread = thread
 
-        self.stdout_thread = threading.Thread(target=do_log, args=(self.stdout, LOG_STDOUT))
-        self.stdout_thread.start()
-        self.stderr_thread = threading.Thread(target=do_log, args=(self.stderr, LOG_STDERR))
-        self.stderr_thread.start()
+    @classmethod
+    def popen(cls, args, **kwargs) -> 'LoggedProcess':
+        to_async = queue.Queue()
+        from_async = queue.Queue()
 
-    def wait(self, timeout=None) -> int:
-        self.stdout_thread.join()
-        self.stderr_thread.join()
+        async def do_popen():
+            async_process = await AsyncLoggedProcess.popen(args, **kwargs)
+            from_async.put(async_process)
 
-        return super().wait(timeout)
+            todo_next = await asyncio.to_thread(to_async.get)
+            result = await todo_next()
+            from_async.put(result)
+
+        thread = threading.Thread(target=lambda: asyncio.run(do_popen()))
+        thread.start()
+
+        async_process = from_async.get()
+
+        return LoggedProcess(thread, to_async, from_async, async_process)
+
+    def wait(self) -> int:
+        self.to_async.put(lambda: self.async_process.wait())
+        self.thread.join()
+        return self.from_async.get()
 
     def detach(self):
-        pass
+        self.to_async.put(lambda: self.async_process.detach())
+        self.thread.join()
+        return self.from_async.get()
+
+    @classmethod
+    def run(cls, args, **kwargs):
+        process = cls.popen(args, **kwargs)
+        return_code = process.wait()
+        if return_code:
+            raise subprocess.CalledProcessError(return_code, args)
+
+        return return_code

@@ -4,7 +4,6 @@ import re
 import shutil
 import traceback
 from logging.handlers import TimedRotatingFileHandler
-from subprocess import Popen
 from typing import Optional, Generator, Union, TypeVar, Any, Callable
 
 import simple_ipc
@@ -14,7 +13,7 @@ import io
 from pathlib import Path
 
 import venv_management
-from venv_management import user_cache, venv_dir_python_relative, rent_manager_dirs
+from venv_management import user_cache, venv_dir_python_relative, rent_manager_dirs, LoggedProcess
 
 install_complete_marker = 'install_complete_marker'
 
@@ -70,7 +69,7 @@ def get_latest_release():
     return next(iter(repo.get_releases()))
 
 
-def install_latest_release() -> Generator[str, Any, Popen]:
+def install_latest_release() -> Generator[str, Any, LoggedProcess]:
     """
     Install the latest_release release
     :return: The directory into which the release was installed
@@ -112,7 +111,7 @@ def install_latest_release() -> Generator[str, Any, Popen]:
     return release_dir
 
 
-def run_application(release_dir: Path, file: Optional[str], port: int) -> Popen:
+def run_application(release_dir: Path, file: Optional[str], port: int) -> LoggedProcess:
     release_venv = release_dir / 'venv'
 
     popen = venv_management.popen_in_venv(
@@ -146,7 +145,7 @@ def generator_return_value(g: Generator[T, Any, U]) -> tuple[Generator[T, Any, U
     return proxy_generator(), get
 
 
-def install_and_launch(file: str, app_server_port: int) -> Generator[Union[str, dict], None, Popen]:
+def install_and_launch(file: str, app_server_port: int) -> Generator[Union[str, dict], None, LoggedProcess]:
     latest_release = get_latest_installed_release()
     if latest_release is None:
         latest_release = yield from install_latest_release()

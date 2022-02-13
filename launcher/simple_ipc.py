@@ -82,6 +82,7 @@ class Client(Channel):
         except Exception:
             tb = traceback.format_exc()
             self.send({'type': 'error', 'traceback': tb})
+        list(it)  # exhaust the iterator to make sure it completes
 
 
 CLOSE_WINDOW = {'type': 'close_window'}

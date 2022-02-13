@@ -42,7 +42,7 @@ def set_icon(root: tk.Tk) -> None:
         if not logo_icon.is_file():
             Image.open(logo_png).save(logo_icon, format=icon_type, sizes=icon_sizes)
 
-        root.iconbitmap(str(logo_icon), default=True)
+        root.iconbitmap(str(logo_icon))
 
 
 def main() -> None:

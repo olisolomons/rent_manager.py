@@ -205,6 +205,7 @@ def bootstrap_and_run():
     if is_windows:
         launcher.wait()
     else:
+        time.sleep(2)
         launcher.detach()
 
 

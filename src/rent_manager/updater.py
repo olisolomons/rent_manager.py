@@ -8,7 +8,6 @@ from tkinter.scrolledtext import ScrolledText
 from typing import Optional
 
 import tk_utils
-from venv_management import rent_manager_dirs
 
 if typing.TYPE_CHECKING:
     import simple_ipc
@@ -19,6 +18,7 @@ def check_for_updates(root: tk.Misc, client: 'simple_ipc.Channel', current_versi
     latest_version: str = client.recv()['value']
 
     from launcher import parse_release
+    from venv_management import rent_manager_dirs
 
     if current_version is None:
         messagebox.showinfo('Updates', f'Latest version is {latest_version}. Unable to detect current '

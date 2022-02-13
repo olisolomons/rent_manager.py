@@ -1,14 +1,13 @@
 import asyncio
-import itertools
+import logging
 import queue
 import subprocess
-import sys
 import threading
 from pathlib import Path
-import logging
-from typing import Optional
 
 import appdirs
+import itertools
+import sys
 
 is_windows = sys.platform.startswith('win')
 
@@ -127,17 +126,24 @@ class LoggedProcess:
         from_async = queue.Queue()
 
         async def do_popen():
+            logging.debug('do_popen: Awaiting process open')
             async_process = await AsyncLoggedProcess.popen(args, **kwargs)
             from_async.put(async_process)
 
+            logging.debug('do_popen: getting wait/detach command')
             todo_next = await asyncio.to_thread(to_async.get)
+            logging.debug('do_popen: performing command')
             result = await todo_next()
             from_async.put(result)
+            logging.debug('do_popen: done')
 
         thread = threading.Thread(target=lambda: asyncio.run(do_popen()))
+        logging.debug('Starting process management thread')
         thread.start()
+        logging.debug('Started, getting process handle')
 
         async_process = from_async.get()
+        logging.debug('Got handle')
 
         return LoggedProcess(thread, to_async, from_async, async_process)
 

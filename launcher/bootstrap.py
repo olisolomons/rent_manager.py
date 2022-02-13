@@ -201,28 +201,41 @@ class InstallerApp(tk.Tk):
 
 
 def bootstrap_and_run():
+    logging.info('Starting')
     yield from bootstrap()
     yield 'Installed launcher...\nPlease wait for launcher to start'
+    logging.debug('Creating socket')
     with simple_ipc.get_sock() as sock:
+        logging.debug('Setting up socket')
         server = simple_ipc.Server(sock)
+        logging.debug('Starting process')
         launcher = venv_management.popen_in_venv(
             launcher_venv,
             [launcher_venv / venv_dir_python_relative, 'launcher.py', '--port', str(server.port), *sys.argv[1:]],
             cwd=script_dir
         )
+        logging.info('Started launcher process')
         while True:
             try:
+                logging.info('Connecting to launcher socket')
                 yield from server.recv_all()
                 break
             except socket.timeout:
-                if launcher.async_process.process.returncode is not None:
+                launcher_process = launcher.async_process.process
+                if launcher_process.returncode is not None:
+                    logging.error(
+                        f'Timed out connecting to launcher socket: '
+                        f'process finished with code {launcher_process.returncode}'
+                    )
                     yield {'type': 'error', 'traceback': 'Unable to connect to launcher'}
                     break
+                logging.warning('Timed out connecting to launcher socket, trying again')
 
     if is_windows:
+        logging.debug('Waiting for launcher to complete')
         launcher.wait()
     else:
-        time.sleep(2)
+        logging.debug('Detaching from launcher')
         launcher.detach()
 
 

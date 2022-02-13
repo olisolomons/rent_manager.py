@@ -17,7 +17,6 @@ import venv_management
 from venv_management import user_cache, script_dir, is_windows, conda_dir, launcher_venv, venv_dir_python_relative
 from venv_management import rent_manager_dirs, LoggedProcess
 
-
 bootstrap_complete_marker = user_cache / 'bootstrap_complete'
 conda_installed_marker = user_cache / 'conda_installed'
 
@@ -89,13 +88,18 @@ def test():
     yield 'Alien'
     time.sleep(0.5)
     yield 'Thing'
-    time.sleep(0.5)
+    time.sleep(1)
     yield simple_ipc.CLOSE_WINDOW
 
 def msgs():
     with simple_ipc.get_sock() as installer_client_sock:
         client = simple_ipc.Client(installer_client_sock, int(sys.argv[1]))
         client.run(test())
+        # int(int)
+
+# msgs()
+
+
 
 t=Thread(target=msgs)
 root=tk.Tk()
@@ -109,9 +113,11 @@ root.mainloop()
 
 """
         proc = LoggedProcess.popen([which('python3'), '-c', code, str(server.port)])
-        for msg in server.recv_all():
-            print(f'{msg=}')
-    proc.wait()
+        yield from server.recv_all()
+        print('closing sock')
+    print('waiting')
+    time.sleep(1)
+    proc.detach()
 
 
 class InstallerApp(tk.Tk):
@@ -172,6 +178,7 @@ class InstallerApp(tk.Tk):
             for current_step in task:
                 self.current_task_queue.put(current_step)
                 if current_step == simple_ipc.CLOSE_WINDOW:
+                    list(task)  # exhaust generator to unsure it completes
                     return
             self.current_task_queue.put(simple_ipc.CLOSE_WINDOW)
         except Exception:

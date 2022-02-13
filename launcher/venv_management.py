@@ -49,16 +49,18 @@ def popen_in_venv(venv, command: list, **kwargs) -> 'LoggedProcess':
 
 
 class AsyncLoggedProcess:
-    def __init__(self, process: asyncio.subprocess.Process, stdout: asyncio.Task, stderr: asyncio.Task,
+    def __init__(self, process: asyncio.subprocess.Process, stdout_task: asyncio.Task, stderr_task: asyncio.Task,
                  detach_event: asyncio.Event):
         self.process = process
-        self.stdout = stdout
-        self.stderr = stderr
+        self.stdout_task = stdout_task
+        self.stderr_task = stderr_task
         self.detach_event = detach_event
 
     @classmethod
     async def popen(cls, args, **kwargs) -> 'AsyncLoggedProcess':
-        process = await asyncio.create_subprocess_exec(*args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, **kwargs)
+        process: asyncio.subprocess.Process = await asyncio.create_subprocess_exec(
+            *args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, **kwargs
+        )
         detach = asyncio.Event()
 
         logger = logging.getLogger().getChild(f'proc{process.pid}')
@@ -89,13 +91,13 @@ class AsyncLoggedProcess:
         return cls(process, stdout_task, stderr_task, detach)
 
     async def wait(self) -> int:
-        await asyncio.gather(self.stdout, self.stderr)
+        await asyncio.gather(self.stdout_task, self.stderr_task)
 
         return await self.process.wait()
 
     async def detach(self):
         self.detach_event.set()
-        await asyncio.gather(self.stdout, self.stderr)
+        await asyncio.gather(self.stdout_task, self.stderr_task)
 
     @classmethod
     async def run(cls, args, **kwargs):
@@ -109,7 +111,7 @@ class AsyncLoggedProcess:
 
 class LoggedProcess:
     """
-    Wrapper
+    Wrapper for AsyncLoggedProcess allowing synchronous usage
     """
 
     def __init__(self, thread: threading.Thread, to_async: queue.Queue, from_async: queue.Queue,

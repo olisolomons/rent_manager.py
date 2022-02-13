@@ -1,6 +1,7 @@
 import logging
 import queue
 import shutil
+import socket
 import threading
 import tkinter as tk
 import traceback
@@ -14,8 +15,8 @@ import time
 
 import simple_ipc
 import venv_management
-from venv_management import user_cache, script_dir, is_windows, conda_dir, launcher_venv, venv_dir_python_relative
 from venv_management import rent_manager_dirs, LoggedProcess
+from venv_management import user_cache, script_dir, is_windows, conda_dir, launcher_venv, venv_dir_python_relative
 
 bootstrap_complete_marker = user_cache / 'bootstrap_complete'
 conda_installed_marker = user_cache / 'conda_installed'
@@ -89,6 +90,7 @@ def test():
     time.sleep(0.5)
     yield 'Thing'
     time.sleep(1)
+    # int(int)
     yield simple_ipc.CLOSE_WINDOW
 
 def msgs():
@@ -97,23 +99,31 @@ def msgs():
         client.run(test())
         # int(int)
 
-# msgs()
+msgs()
 
 
 
-t=Thread(target=msgs)
-root=tk.Tk()
-root.after(500,lambda:print('stuff'))
-root.after(1000,t.start)
-
-root.after(5000,root.destroy)
-
-root.mainloop()
+# t=Thread(target=msgs)
+# root=tk.Tk()
+# root.after(500,lambda:print('stuff'))
+# root.after(1000,t.start)
+# 
+# root.after(10000,root.destroy)
+# 
+# root.mainloop()
 
 
 """
-        proc = LoggedProcess.popen([which('python3'), '-c', code, str(server.port)])
-        yield from server.recv_all()
+        proc = LoggedProcess.popen([which('python'), '-c', code, str(server.port)])
+        while True:
+            try:
+                yield from server.recv_all()
+                break
+            except socket.timeout:
+                if proc.async_process.process.returncode is not None:
+                    yield {'type': 'error', 'traceback': 'Unable to connect to launcher'}
+                    break
+
         print('closing sock')
     print('waiting')
     time.sleep(1)
@@ -178,8 +188,8 @@ class InstallerApp(tk.Tk):
             for current_step in task:
                 self.current_task_queue.put(current_step)
                 if current_step == simple_ipc.CLOSE_WINDOW:
-                    list(task)  # exhaust generator to unsure it completes
-                    return
+                    break
+            list(task)  # exhaust generator to unsure it completes
             self.current_task_queue.put(simple_ipc.CLOSE_WINDOW)
         except Exception:
             self.current_task_queue.put({'type': 'error', 'traceback': traceback.format_exc()})
@@ -200,7 +210,14 @@ def bootstrap_and_run():
             [launcher_venv / venv_dir_python_relative, 'launcher.py', '--port', str(server.port), *sys.argv[1:]],
             cwd=script_dir
         )
-        yield from server.recv_all()
+        while True:
+            try:
+                yield from server.recv_all()
+                break
+            except socket.timeout:
+                if launcher.async_process.process.returncode is not None:
+                    yield {'type': 'error', 'traceback': 'Unable to connect to launcher'}
+                    break
 
     if is_windows:
         launcher.wait()

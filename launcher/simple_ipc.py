@@ -45,7 +45,7 @@ class Server:
         self.sock = sock
         self.sock.bind(('', 0))
         self.sock.listen(1)
-        self.sock.settimeout(2)
+        self.sock.settimeout(1)
 
     @property
     def port(self):
@@ -56,16 +56,13 @@ class Server:
         return Channel(conn)
 
     def recv_all(self, channel=None):
-        try:
-            if channel is None:
-                channel = self.accept()
-            while True:
-                try:
-                    yield channel.recv()
-                except ChannelClosedException:
-                    return
-        except socket.timeout:
-            yield {'type': 'error', 'traceback': traceback.format_exc()}
+        if channel is None:
+            channel = self.accept()
+        while True:
+            try:
+                yield channel.recv()
+            except ChannelClosedException:
+                return
 
 
 class Client(Channel):

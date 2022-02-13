@@ -1,18 +1,16 @@
 import argparse
+import io
 import logging
 import re
 import shutil
 import socket
 import traceback
 from logging.handlers import TimedRotatingFileHandler
+from pathlib import Path
 from typing import Optional, Generator, Union, TypeVar, Any, Callable
+from zipfile import ZipFile
 
 import simple_ipc
-
-from zipfile import ZipFile
-import io
-from pathlib import Path
-
 import venv_management
 from venv_management import user_cache, venv_dir_python_relative, rent_manager_dirs, LoggedProcess
 
@@ -160,7 +158,7 @@ def main():
     installer_client_sock: Optional[socket.socket] = None
 
     def run_with_server(runner):
-        nonlocal get_app_process
+        nonlocal get_app_process, installer_client_sock
 
         restart_on_close = False
 
@@ -175,10 +173,19 @@ def main():
             else:
                 print(f'{app_server.port=}')
 
+            while True:
+                try:
+                    channel = app_server.accept()
+                    break
+                except socket.timeout:
+                    if get_app_process:
+                        app_process = get_app_process()
+                        if app_process.async_process.process.returncode is not None:
+                            raise
+
             if installer_client_sock is not None:
                 installer_client_sock.close()
-
-            channel = app_server.accept()
+                installer_client_sock = None
 
             for app_message in app_server.recv_all(channel):
                 print(f'{app_message=}')
@@ -206,7 +213,14 @@ def main():
         with simple_ipc.get_sock() as installer_client_sock:
             client = simple_ipc.Client(installer_client_sock, int(args.port))
 
-            run_with_server(client.run)
+            def runner(install_and_launch_generator):
+                if installer_client_sock is not None:
+                    client.run(install_and_launch_generator)
+                else:
+                    for step in install_and_launch_generator:
+                        print(step)
+
+            run_with_server(runner)
     else:
         def runner(install_and_launch_generator):
             for step in install_and_launch_generator:

@@ -173,26 +173,26 @@ def main():
             else:
                 print(f'{app_server.port=}')
 
-            channel = app_server.accept()
+        channel = app_server.accept()
 
-            for app_message in app_server.recv_all(channel):
-                print(f'{app_message=}')
-                if app_message['type'] == 'latest_version':
-                    channel.send({'type': 'latest_version', 'value': get_latest_release().tag_name})
-                elif app_message['type'] == 'do_update':
-                    try:
-                        for step in install_latest_release():
-                            channel.send({'type': 'install_status', 'value': step})
-                    except Exception:
-                        tb = traceback.format_exc()
-                        channel.send({'type': 'error', 'value': tb})
-                    else:
-                        channel.send(simple_ipc.CLOSE_WINDOW)
-                elif app_message['type'] == 'restart':
-                    restart_on_close = True
-                    if get_app_process:
-                        app_process = get_app_process()
-                        app_process.wait()
+        for app_message in app_server.recv_all(channel):
+            print(f'{app_message=}')
+            if app_message['type'] == 'latest_version':
+                channel.send({'type': 'latest_version', 'value': get_latest_release().tag_name})
+            elif app_message['type'] == 'do_update':
+                try:
+                    for step in install_latest_release():
+                        channel.send({'type': 'install_status', 'value': step})
+                except Exception:
+                    tb = traceback.format_exc()
+                    channel.send({'type': 'error', 'value': tb})
+                else:
+                    channel.send(simple_ipc.CLOSE_WINDOW)
+            elif app_message['type'] == 'restart':
+                restart_on_close = True
+                if get_app_process:
+                    app_process = get_app_process()
+                    app_process.wait()
 
         if restart_on_close:
             run_with_server(runner)

@@ -1,4 +1,5 @@
 import logging
+import multiprocessing
 import queue
 import shutil
 import socket
@@ -247,4 +248,5 @@ def main():
 
 
 if __name__ == '__main__':
+    multiprocessing.freeze_support()
     main()

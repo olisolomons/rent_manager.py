@@ -126,6 +126,8 @@ class LoggedProcess:
         from_async = queue.Queue()
 
         async def do_popen():
+            asyncio.get_child_watcher().attach_loop(asyncio.get_running_loop())
+
             logging.debug('do_popen: Awaiting process open')
             async_process = await AsyncLoggedProcess.popen(args, **kwargs)
             from_async.put(async_process)
@@ -142,7 +144,7 @@ class LoggedProcess:
         thread.start()
         logging.debug('Started, getting process handle')
 
-        async_process = from_async.get()
+        async_process = from_async.get()  # TODO: hangs here waiting for asyncio thread
         logging.debug('Got handle')
 
         return LoggedProcess(thread, to_async, from_async, async_process)

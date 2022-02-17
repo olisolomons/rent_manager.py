@@ -1,9 +1,11 @@
+import abc
 import asyncio
 import logging
 import queue
 import subprocess
 import threading
 from pathlib import Path
+from typing import Type
 
 import appdirs
 import itertools
@@ -108,7 +110,36 @@ class AsyncLoggedProcess:
         return return_code
 
 
-class LoggedProcess:
+class BaseLoggedProcess(abc.ABC):
+    @classmethod
+    @abc.abstractmethod
+    def popen(cls, args, **kwargs) -> 'BaseLoggedProcess':
+        pass
+
+    @abc.abstractmethod
+    def wait(self) -> int:
+        pass
+
+    @abc.abstractmethod
+    def detach(self):
+        pass
+
+    @classmethod
+    def run(cls, args, **kwargs):
+        process = cls.popen(args, **kwargs)
+        return_code = process.wait()
+        if return_code:
+            raise subprocess.CalledProcessError(return_code, args)
+
+        return return_code
+
+    @property
+    @abc.abstractmethod
+    def return_code(self) -> int:
+        pass
+
+
+class SyncLoggedProcess(BaseLoggedProcess):
     """
     Wrapper for AsyncLoggedProcess allowing synchronous usage
     """
@@ -121,13 +152,11 @@ class LoggedProcess:
         self.thread = thread
 
     @classmethod
-    def popen(cls, args, **kwargs) -> 'LoggedProcess':
+    def popen(cls, args, **kwargs) -> 'SyncLoggedProcess':
         to_async = queue.Queue()
         from_async = queue.Queue()
 
         async def do_popen():
-            asyncio.get_child_watcher().attach_loop(asyncio.get_running_loop())
-
             logging.debug('do_popen: Awaiting process open')
             async_process = await AsyncLoggedProcess.popen(args, **kwargs)
             from_async.put(async_process)
@@ -147,7 +176,7 @@ class LoggedProcess:
         async_process = from_async.get()  # TODO: hangs here waiting for asyncio thread
         logging.debug('Got handle')
 
-        return LoggedProcess(thread, to_async, from_async, async_process)
+        return cls(thread, to_async, from_async, async_process)
 
     def wait(self) -> int:
         self.to_async.put(lambda: self.async_process.wait())
@@ -159,11 +188,50 @@ class LoggedProcess:
         self.thread.join()
         return self.from_async.get()
 
-    @classmethod
-    def run(cls, args, **kwargs):
-        process = cls.popen(args, **kwargs)
-        return_code = process.wait()
-        if return_code:
-            raise subprocess.CalledProcessError(return_code, args)
+    @property
+    def return_code(self) -> int:
+        return self.async_process.process.returncode
 
-        return return_code
+
+class LoggedPopen(subprocess.Popen, BaseLoggedProcess):
+    def __init__(self, args, **kwargs):
+        kwargs['stdout'] = subprocess.PIPE
+        kwargs['stderr'] = subprocess.PIPE
+        kwargs['text'] = True
+        super().__init__(args, **kwargs)
+
+        def do_log(stream, level):
+            with stream:
+                line: str
+                for line in iter(stream.readline, ''):
+                    logging.log(level, line.rstrip())
+            logging.log(level, '[CLOSED]')
+
+        self.stdout_thread = threading.Thread(target=do_log, args=(self.stdout, LOG_STDOUT))
+        self.stdout_thread.start()
+        self.stderr_thread = threading.Thread(target=do_log, args=(self.stderr, LOG_STDERR))
+        self.stderr_thread.start()
+
+    @classmethod
+    def popen(cls, args, **kwargs) -> 'LoggedPopen':
+        return cls(args, **kwargs)
+
+    def wait(self, timeout=None) -> int:
+        self.stdout_thread.join()
+        self.stderr_thread.join()
+
+        return super().wait(timeout)
+
+    def detach(self):
+        raise NotImplementedError()
+
+    @property
+    def return_code(self) -> int:
+        return self.poll()
+
+
+LoggedProcess: Type[BaseLoggedProcess]
+if sys.platform.startswith('win'):
+    LoggedProcess = LoggedPopen
+else:
+    LoggedProcess = SyncLoggedProcess

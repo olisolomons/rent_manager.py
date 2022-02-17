@@ -179,8 +179,8 @@ def main():
                     break
                 except socket.timeout:
                     if get_app_process:
-                        app_process = get_app_process()
-                        if app_process.async_process.process.returncode is not None:
+                        app_process: venv_management.BaseLoggedProcess = get_app_process()
+                        if app_process.return_code is not None:
                             raise
 
             if installer_client_sock is not None:

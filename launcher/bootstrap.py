@@ -121,7 +121,7 @@ msgs()
                 yield from server.recv_all()
                 break
             except socket.timeout:
-                if proc.async_process.process.returncode is not None:
+                if proc.return_code is not None:
                     yield {'type': 'error', 'traceback': 'Unable to connect to launcher'}
                     break
 
@@ -210,7 +210,7 @@ def bootstrap_and_run():
         logging.debug('Setting up socket')
         server = simple_ipc.Server(sock)
         logging.debug('Starting process')
-        launcher = venv_management.popen_in_venv(
+        launcher: venv_management.BaseLoggedProcess = venv_management.popen_in_venv(
             launcher_venv,
             [launcher_venv / venv_dir_python_relative, 'launcher.py', '--port', str(server.port), *sys.argv[1:]],
             cwd=script_dir
@@ -222,11 +222,10 @@ def bootstrap_and_run():
                 yield from server.recv_all()
                 break
             except socket.timeout:
-                launcher_process = launcher.async_process.process
-                if launcher_process.returncode is not None:
+                if launcher.return_code is not None:
                     logging.error(
                         f'Timed out connecting to launcher socket: '
-                        f'process finished with code {launcher_process.returncode}'
+                        f'process finished with code {launcher.return_code}'
                     )
                     yield {'type': 'error', 'traceback': 'Unable to connect to launcher'}
                     break

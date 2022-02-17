@@ -197,6 +197,7 @@ class LoggedPopen(subprocess.Popen, BaseLoggedProcess):
     def __init__(self, args, **kwargs):
         kwargs['stdout'] = subprocess.PIPE
         kwargs['stderr'] = subprocess.PIPE
+        kwargs['stdin'] = subprocess.DEVNULL
         kwargs['text'] = True
         super().__init__(args, **kwargs)
 

@@ -17,7 +17,8 @@ import time
 import simple_ipc
 import venv_management
 from venv_management import rent_manager_dirs, LoggedProcess
-from venv_management import user_cache, script_dir, is_windows, conda_dir, launcher_venv, venv_dir_python_relative
+from venv_management import user_cache, script_dir, is_windows, conda_dir, launcher_venv, launcher_files_dir, \
+    venv_dir_python_relative
 
 bootstrap_complete_marker = user_cache / 'bootstrap_complete'
 conda_installed_marker = user_cache / 'conda_installed'
@@ -32,6 +33,12 @@ logging.basicConfig(
     handlers=[handler, logging.StreamHandler(sys.stdout)],
     level=logging.DEBUG
 )
+
+launcher_files = [
+    script_dir / 'launcher.py',
+    script_dir / 'simple_ipc.py',
+    script_dir / 'venv_management.py',
+]
 
 
 def bootstrap():
@@ -61,6 +68,11 @@ def bootstrap():
                 shutil.rmtree(item)
             else:
                 item.unlink()
+
+    yield 'Copying launcher'
+    launcher_files_dir.mkdir()
+    for launcher_file in launcher_files:
+        shutil.copyfile(launcher_file, launcher_files_dir)
 
     yield 'Installing launcher'
     venv_management.new_venv(launcher_venv, script_dir / 'launcher_requirements.txt')
@@ -213,7 +225,7 @@ def bootstrap_and_run():
         launcher: venv_management.BaseLoggedProcess = venv_management.popen_in_venv(
             launcher_venv,
             [launcher_venv / venv_dir_python_relative, 'launcher.py', '--port', str(server.port), *sys.argv[1:]],
-            cwd=script_dir
+            cwd=launcher_files_dir
         )
         logging.info('Started launcher process')
         while True:

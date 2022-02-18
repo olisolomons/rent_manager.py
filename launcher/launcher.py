@@ -31,7 +31,7 @@ handler = TimedRotatingFileHandler(
 logging.basicConfig(
     format='[%(asctime)s] [%(levelname)s] [%(name)s] - %(message)s',
     handlers=[handler],
-    level=logging.INFO
+    level=logging.DEBUG
 )
 
 
@@ -188,7 +188,7 @@ def main():
                 installer_client_sock = None
 
             for app_message in app_server.recv_all(channel):
-                print(f'{app_message=}')
+                logging.info(f'{app_message=}')
                 if app_message['type'] == 'latest_version':
                     channel.send({'type': 'latest_version', 'value': get_latest_release().tag_name})
                 elif app_message['type'] == 'do_update':

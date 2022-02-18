@@ -19,6 +19,7 @@ script_dir = Path(__file__).parent
 
 conda_dir = user_cache / 'python' / 'miniconda'
 launcher_venv = user_cache / 'python' / 'launcher_venv'
+launcher_files_dir = user_cache / 'python' / 'launcher_files'
 
 LOG_STDERR = logging.INFO + 2
 logging.addLevelName(LOG_STDERR, 'STDERR')
@@ -173,7 +174,7 @@ class SyncLoggedProcess(BaseLoggedProcess):
         thread.start()
         logging.debug('Started, getting process handle')
 
-        async_process = from_async.get()  # TODO: hangs here waiting for asyncio thread
+        async_process = from_async.get()
         logging.debug('Got handle')
 
         return cls(thread, to_async, from_async, async_process)

@@ -72,7 +72,7 @@ def bootstrap():
     yield 'Copying launcher'
     launcher_files_dir.mkdir()
     for launcher_file in launcher_files:
-        shutil.copyfile(launcher_file, launcher_files_dir)
+        shutil.copy(launcher_file, launcher_files_dir)
 
     yield 'Installing launcher'
     venv_management.new_venv(launcher_venv, script_dir / 'launcher_requirements.txt')

@@ -36,7 +36,7 @@ else:
 
 def new_venv(destination, requirements, channels=()):
     destination.mkdir(parents=True)
-    LoggedProcess.run([conda_exec, 'create', '-p', destination, 'python=3.9', '--yes', '--no-default-packages'])
+    LoggedProcess.run([conda_exec, 'create', '-p', destination, 'python=3.10', '--yes', '--no-default-packages'])
     LoggedProcess.run([
         conda_exec, 'install', '-p', destination, '--file', requirements, '--yes',
         *itertools.chain.from_iterable(('-c', channel) for channel in channels)

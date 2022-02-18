@@ -44,6 +44,19 @@ def set_icon(root: tk.Tk) -> None:
 
         root.iconbitmap(str(logo_icon))
 
+        if sys.platform.startswith('darwin'):
+            try:
+                from Foundation import NSBundle
+            except ImportError:
+                logging.warning('Unable to import Foundation to set NSBundle info')
+            else:
+                bundle = NSBundle.mainBundle()
+                if bundle:
+                    info = bundle.localizedInfoDictionary() or bundle.infoDictionary()
+                    if info and info['CFBundleName'] == 'Python':
+                        info['CFBundleName'] = 'Rent Manager'
+                    info['CFBundleIconFile'] = str(logo_icon.resolve())
+
 
 def main() -> None:
     report_generator.hello_world()

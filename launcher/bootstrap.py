@@ -75,7 +75,7 @@ def bootstrap():
         shutil.copy(launcher_file, launcher_files_dir)
 
     yield 'Installing launcher'
-    venv_management.new_venv(launcher_venv, script_dir / 'launcher_requirements.txt')
+    venv_management.new_venv(launcher_venv, script_dir / 'launcher_requirements.txt', channels=['conda-forge'])
 
     yield 'Finishing launcher installation'
     bootstrap_complete_marker.touch()

@@ -104,7 +104,9 @@ def install_latest_release() -> Generator[str, Any, LoggedProcess]:
     release_venv = release_dir / 'venv'
     venv_management.new_venv(release_venv, release_dir / 'requirements.txt', channels=['conda-forge'])
     LoggedProcess.run([
-        venv_management.conda_exec, 'install', '-p', release_venv, 'pyobjc-framework-cocoa'
+        venv_management.conda_exec, 'install', '-p', release_venv,
+        '-c', 'conda-forge',
+        'pyobjc-framework-cocoa'
     ])
 
     yield 'Finishing application installation'

@@ -56,7 +56,7 @@ def set_icon(root: tk.Tk) -> None:
                 ns_application.setApplicationIconImage_(logo_ns_image)
                 
                 logging.info('Setting MacOS title')
-                menu = app.mainMenu().itemAtIndex_(0).submenu()
+                menu = ns_application.mainMenu().itemAtIndex_(0).submenu()
                 menu.setTitle_('Rent Manager')
 
 

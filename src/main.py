@@ -50,9 +50,14 @@ def set_icon(root: tk.Tk) -> None:
             except ImportError:
                 logging.warning('Unable to import pyobjc modules')
             else:
+                logging.info('Setting MacOS icon')
                 ns_application = NSApplication.sharedApplication()
                 logo_ns_image = NSImage.alloc().initByReferencingFile_(str(logo_icon.resolve()))
                 ns_application.setApplicationIconImage_(logo_ns_image)
+                
+                logging.info('Setting MacOS title')
+                menu = app.mainMenu().itemAtIndex_(0).submenu()
+                menu.setTitle_('Rent Manager')
 
 
 def main() -> None:

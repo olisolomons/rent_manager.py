@@ -42,8 +42,6 @@ def set_icon(root: tk.Tk) -> None:
         if not logo_icon.is_file():
             Image.open(logo_png).save(logo_icon, format=icon_type, sizes=icon_sizes)
 
-        root.iconbitmap(str(logo_icon))
-
         if sys.platform.startswith('darwin'):
             def set_window_info():
                 try:
@@ -60,6 +58,8 @@ def set_icon(root: tk.Tk) -> None:
                     menu = ns_application.mainMenu().itemAtIndex_(0).submenu()
                     menu.setTitle_('Rent Manager')
             root.after(1000, set_window_info)
+        else:
+            root.iconbitmap(str(logo_icon))
 
 
 def main() -> None:

@@ -45,17 +45,21 @@ def set_icon(root: tk.Tk) -> None:
         root.iconbitmap(str(logo_icon))
 
         if sys.platform.startswith('darwin'):
-            try:
-                from Foundation import NSBundle
-            except ImportError:
-                logging.warning('Unable to import Foundation to set NSBundle info')
-            else:
-                bundle = NSBundle.mainBundle()
-                if bundle:
-                    info = bundle.localizedInfoDictionary() or bundle.infoDictionary()
-                    if info and info['CFBundleName'] == 'Python':
-                        info['CFBundleName'] = 'Rent Manager'
-                    info['CFBundleIconFile'] = str(logo_icon.resolve())
+            def set_window_info():
+                try:
+                    from Cocoa import NSApplication, NSImage
+                except ImportError:
+                    logging.warning('Unable to import pyobjc modules')
+                else:
+                    logging.info('Setting MacOS icon')
+                    ns_application = NSApplication.sharedApplication()
+                    logo_ns_image = NSImage.alloc().initByReferencingFile_(str(logo_icon.resolve()))
+                    ns_application.setApplicationIconImage_(logo_ns_image)
+
+                    logging.info('Setting MacOS title')
+                    menu = ns_application.mainMenu().itemAtIndex_(0).submenu()
+                    menu.setTitle_('Rent Manager')
+            root.after(1000, set_window_info)
 
 
 def main() -> None:

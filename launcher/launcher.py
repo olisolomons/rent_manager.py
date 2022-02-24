@@ -9,6 +9,7 @@ from logging.handlers import TimedRotatingFileHandler
 from pathlib import Path
 from typing import Optional, Generator, Union, TypeVar, Any, Callable
 from zipfile import ZipFile
+import sys
 
 import simple_ipc
 import venv_management

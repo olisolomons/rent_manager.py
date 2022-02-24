@@ -97,6 +97,11 @@ class RentManagerApp(DocumentManager):
                 if rent_manager_self.launcher_client is None:
                     self.version.entryconfigure(1, state=tk.DISABLED)
 
+                self.reports = tk.Menu(self, tearoff=False)
+                self.add_cascade(label='Reports', menu=self.reports)
+
+                self.reports.add_command(label='Generate report')
+
         self.menu = RentManagerMenu
 
     def populate_from_data(self, data: RentManagerState):

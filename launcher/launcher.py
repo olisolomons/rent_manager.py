@@ -106,6 +106,7 @@ def install_latest_release() -> Generator[str, Any, LoggedProcess]:
     LoggedProcess.run([
         venv_management.conda_exec, 'install', '-p', release_venv,
         '-c', 'conda-forge',
+        '--yes',
         'pyobjc-framework-cocoa'
     ])
 

@@ -3,11 +3,10 @@ import logging
 import tkinter as tk
 from logging.handlers import TimedRotatingFileHandler
 from pathlib import Path
-from PIL import Image
 
 import sys
+from PIL import Image
 
-import report_generator
 from rent_manager.app import RentManagerApp
 from rent_manager.config import rent_manager_dirs
 
@@ -63,7 +62,6 @@ def set_icon(root: tk.Tk) -> None:
 
 
 def main() -> None:
-    report_generator.hello_world()
     args = parser.parse_args()
 
     w, h = 1200, 1000

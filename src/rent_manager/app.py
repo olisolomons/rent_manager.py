@@ -1,5 +1,6 @@
 import dataclasses
 import enum
+import logging
 import tkinter as tk
 from pathlib import Path
 from tkinter import filedialog
@@ -10,6 +11,7 @@ from typing import Callable, Optional, TYPE_CHECKING
 import sys
 
 import dataclass_json
+import report_generator
 import tk_utils
 from tk_utils import ResettableTimer
 from traits.core import ViewWrapper
@@ -100,7 +102,7 @@ class RentManagerApp(DocumentManager):
                 self.reports = tk.Menu(self, tearoff=False)
                 self.add_cascade(label='Reports', menu=self.reports)
 
-                self.reports.add_command(label='Generate report')
+                self.reports.add_command(label='Generate report', command=rent_manager_self.generate_report)
 
         self.menu = RentManagerMenu
 
@@ -211,7 +213,7 @@ class RentManagerApp(DocumentManager):
             return
         file_path = self.filedialog(filedialog.asksaveasfilename)
         if file_path is not None:
-            self.file_path = file_path
+            self.file_path = str(Path(file_path).with_suffix('.rman'))
             self.save(state)
 
     def prompt_unsaved_changes(self):
@@ -293,3 +295,20 @@ class RentManagerApp(DocumentManager):
             return None
 
         return parts[releases_index + 1]
+
+    def generate_report(self):
+        top = self.frame.winfo_toplevel()
+
+        initial_dir = str(Path.home())
+        if self.config.file_chooser_dir is not None:
+            initial_dir = self.config.file_chooser_dir
+
+        res = filedialog.asksaveasfilename(parent=top, initialdir=initial_dir, filetypes=[('PDF', '*.pdf')])
+        if not res:
+            return
+
+        export_path = Path(res).with_suffix('.pdf')
+
+        logging.info(f'Generating report at {export_path}')
+
+        report_generator.generate_report(self.data, self.calculation_results, export_path)

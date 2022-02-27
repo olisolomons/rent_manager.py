@@ -1,9 +1,16 @@
+import abc
+import operator
+import typing
+from datetime import date
+
 from pathlib import Path
+from rent_manager.state.other_transaction import TransactionReason, OtherTransaction
+from rent_manager.state.rent_payment import RentPayment
 from typing import Sequence
 
 from fpdf import FPDF, HTMLMixin
 
-from rent_manager.state.rent_manager_state import RentManagerState, RentCalculations
+from rent_manager.state.rent_manager_state import RentManagerState, RentCalculations, RentManagerMainState
 
 
 class PDF(FPDF, HTMLMixin):
@@ -34,7 +41,7 @@ class PDFGenerator:
     def put_table(self, headers: Sequence[str | tuple[str, float]], data):
         with self.tag('table', border='1'):
             with self.tag('thead'):
-                with self.tag('tr'):
+                with self.tag('tr', bgcolor='#d8e1ed'):
                     def get_weight(header):
                         return 1 if isinstance(header, str) else header[1]
 
@@ -51,8 +58,9 @@ class PDFGenerator:
                             else:
                                 self.put(header[0])
             with self.tag('tbody'):
-                for row in data:
-                    with self.tag('tr'):
+                # TODO: wrap long lines into multiple rows
+                for i, row in enumerate(data):
+                    with self.tag('tr', bgcolor='#FFFFFF' if i % 2 == 0 else '#e9eef5'):
                         for cell in row:
                             with self.tag('td'):
                                 self.put(cell)
@@ -82,6 +90,40 @@ def format_currency(amount, symbol='£'):
 
 def generate_report(data: RentManagerState, calculations: RentCalculations, export_path: str | Path):
     pdf = PDFGenerator()
+    with pdf.tag('h1'):
+        pdf.put('Summary')
+
+    non_payment_costs = format_currency(
+        calculations.total_costs - calculations.other_transaction_sums[TransactionReason.Payment]
+    )
+    total_payments = format_currency(calculations.other_transaction_sums[TransactionReason.Payment])
+    pdf.put_table(
+        [' ', 'Amount'],
+        [
+            ['Total rent received', format_currency(calculations.total_rent_received)],
+            ['Costs', non_payment_costs],
+            ['Payments to landlord', total_payments],
+            ['Balance',
+             f'{format_currency(calculations.total_rent_received)} - {non_payment_costs} - {total_payments} = '
+             f'{format_currency(calculations.balance)}']
+        ]
+    )
+
+    date_format = '%d/%m/%Y'
+    month_format = '%b %Y'
+    with pdf.tag('h1'):
+        pdf.put('Payments to landlord')
+    transaction: OtherTransaction
+    pdf.put_table(
+        ['Date', 'Amount'],
+        [[transaction._date.strftime(date_format), format_currency(transaction.amount)]
+         for transaction in data.rent_manager_main_state.other_transactions
+         if transaction.reason is TransactionReason.Payment]
+    )
+
+    with pdf.tag('h1'):
+        pdf.put('Rent received per month')
+
     rent_for_months = []
     for month, paid in calculations.rent_for_months:
         month_arrears = data.rent_arrangement_data.monthly_rent - paid
@@ -92,13 +134,99 @@ def generate_report(data: RentManagerState, calculations: RentCalculations, expo
         else:
             color = 'AA0000'
         rent_for_months.append([
-            month.strftime('%b %Y'), format_currency(paid),
+            month.strftime(month_format), format_currency(paid),
             f'<font color="#{color}">' + format_currency(month_arrears) + '</font>'
         ])
     pdf.put_table(
         ['Month', 'Amount Paid', 'Arrears for month'],
         rent_for_months
     )
+
+    class AnyTransaction(abc.ABC):
+        @property
+        @abc.abstractmethod
+        def date(self) -> date:
+            pass
+
+        @property
+        @abc.abstractmethod
+        def type(self) -> str:
+            pass
+
+        @property
+        @abc.abstractmethod
+        def amount(self) -> int:
+            pass
+
+        @property
+        @abc.abstractmethod
+        def comment(self) -> str:
+            pass
+
+    class AnyTransactionOtherTransaction(AnyTransaction):
+        def __init__(self, inner: OtherTransaction) -> None:
+            super().__init__()
+            self.inner: OtherTransaction = inner
+
+        @property
+        def date(self) -> date:
+            return self.inner._date
+
+        @property
+        def type(self) -> str:
+            return self.inner.reason.readable_name()
+
+        @property
+        def amount(self) -> int:
+            return self.inner.amount
+
+        @property
+        def comment(self) -> str:
+            return self.inner.comment
+
+    class AnyTransactionRent(AnyTransaction):
+        def __init__(self, inner: RentPayment) -> None:
+            super().__init__()
+            self.inner = inner
+
+        @property
+        def date(self) -> date:
+            return self.inner.received_on
+
+        @property
+        def type(self) -> str:
+            return 'Rent payment'
+
+        @property
+        def amount(self) -> int:
+            return self.inner.amount
+
+        @property
+        def comment(self) -> str:
+            return f'For month {self.inner.for_month.strftime(month_format)}'
+
+    all_transactions: list[AnyTransaction] = sorted(
+        [typing.cast(AnyTransaction, AnyTransactionOtherTransaction(other_transaction))
+         for other_transaction in data.rent_manager_main_state.other_transactions]
+        +
+        [AnyTransactionRent(rent_payment) for rent_payment in data.rent_manager_main_state.rent_payments]
+        ,
+        key=operator.attrgetter('date')
+    )
+    with pdf.tag('h1'):
+        pdf.put('All transactions')
+
+    any_transaction: AnyTransaction
+    pdf.put_table(['Date', 'Type', 'Amount', ('Comment', 3)], [
+        [
+            any_transaction.date.strftime(date_format),
+            any_transaction.type,
+            format_currency(any_transaction.amount),
+            any_transaction.comment + ' '
+        ]
+        for any_transaction in all_transactions
+    ])
+
     pdf.output(str(export_path))
 
 

@@ -1,3 +1,4 @@
+import logging
 import tkinter as tk
 import typing
 from typing import Callable, Optional, Iterator
@@ -265,9 +266,10 @@ class RentManagerState:
 @dataclass
 class RentCalculations:
     rent_for_months: list[tuple[date, int]]
-    arrears: int
     unclaimed_commission: int
-    balance: int
+    total_rent_due: int
+    total_rent_received: int
+    other_transaction_sums: dict[TransactionReason, int]
 
     @classmethod
     def from_rent_manager_state(cls, rent_manager_state: RentManagerState):
@@ -288,7 +290,9 @@ class RentCalculations:
             try:
                 rent_for_months[rent_payment.for_month] += rent_payment.amount
             except KeyError:
-                print(f'{rent_payment.for_month} is not a month in the rental period')
+                logging.warning(
+                    f'{rent_payment.for_month} is not a month in the rental period {start_date} to {date.today()}'
+                )
 
         total_rent_received = sum(
             rent_payment.amount
@@ -296,19 +300,31 @@ class RentCalculations:
         )
         total_rent_due = months_since_start * rent_manager_state.rent_arrangement_data.monthly_rent
         total_commission_due = int(total_rent_received * rent_manager_state.rent_arrangement_data.agents_fee / 100)
-        claimed_commission = sum(
-            transaction.amount
-            for transaction in rent_manager_state.rent_manager_main_state.other_transactions
-            if transaction.reason is TransactionReason.AgentFee
-        )
-        total_costs = sum(
-            transaction.amount
-            for transaction in rent_manager_state.rent_manager_main_state.other_transactions
-        )
+        other_transaction_sums = {
+            reason: sum(
+                transaction.amount
+                for transaction in rent_manager_state.rent_manager_main_state.other_transactions
+                if transaction.reason is reason
+            )
+            for reason in TransactionReason
+        }
 
         return cls(
             rent_for_months=list(rent_for_months.items()),
-            arrears=total_rent_due - total_rent_received,
-            unclaimed_commission=total_commission_due - claimed_commission,
-            balance=total_rent_received - total_costs
+            unclaimed_commission=total_commission_due - other_transaction_sums[TransactionReason.AgentFee],
+            total_rent_due=total_rent_due,
+            total_rent_received=total_rent_received,
+            other_transaction_sums=other_transaction_sums
         )
+
+    @property
+    def arrears(self):
+        return self.total_rent_due - self.total_rent_received
+
+    @property
+    def balance(self):
+        return self.total_rent_received - self.total_costs
+
+    @property
+    def total_costs(self):
+        return sum(self.other_transaction_sums.values())

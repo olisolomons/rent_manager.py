@@ -313,7 +313,7 @@ class _ListView(Generic[T], EditableView[list[T], ListChangeAction]):
     def add(self, data: T, id_: int, editing_item: bool = False,
             previous_item: ListItemRecord = None, grid_row: int = None):
         if self.item_view_func:
-            item_func = self.item_view_func(data)
+            item_func = type(self).item_view_func(data)
         else:
             item_func = data.view()
 

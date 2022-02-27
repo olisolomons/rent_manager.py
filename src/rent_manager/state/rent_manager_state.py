@@ -1,7 +1,8 @@
+import dataclasses
 import logging
 import tkinter as tk
 import typing
-from typing import Callable, Optional, Iterator
+from typing import Callable, Optional, Iterator, Type
 from datetime import date
 from dataclasses import dataclass, field
 
@@ -153,11 +154,13 @@ class RentManagerMainState(ViewableRecord):
         def update_other_transaction_buttons():
             pass
 
+        OtherTransactionScrolled: Optional[Type[OtherTransaction]] = None
+
         def make_other_transaction_buttons(frame: tk.Frame, add_basic: Callable[[OtherTransaction], None]) -> tk.Widget:
-            nonlocal add_other_transaction, update_other_transaction_buttons
+            nonlocal add_other_transaction, update_other_transaction_buttons, OtherTransactionScrolled
 
             def add(reason: TransactionReason, amount: int, comment: str, _date: date) -> None:
-                return add_basic(typing.cast(Callable, OtherTransactionScrolled)(reason, amount, comment, _date))
+                return add_basic(OtherTransaction(reason, amount, comment, _date))
 
             add_other_transaction = add
 
@@ -216,6 +219,11 @@ class RentManagerMainState(ViewableRecord):
 
             return buttons_frame
 
+        def other_transaction_view(transaction: OtherTransaction):
+            fields = {field.name: getattr(transaction, field.name) for field in dataclasses.fields(transaction)}
+            scrolled_transaction = typing.cast(Callable, OtherTransactionScrolled)(**fields)
+            return scrolled_transaction.view()
+
         arrears = tk.Label(parent)
         arrears.grid(row=0, column=0, sticky=tk.W, columnspan=2)
         Spacer(parent, horizontal=True).grid(row=1, column=0, columnspan=2, pady=2)
@@ -228,7 +236,8 @@ class RentManagerMainState(ViewableRecord):
         header(parent, OtherTransaction).grid(row=2, column=1, sticky=tk_utils.STICKY_ALL)
         other_transactions(
             parent,
-            add_button_widget_func=make_other_transaction_buttons
+            add_button_widget_func=make_other_transaction_buttons,
+            item_view_func=other_transaction_view
         ).grid(row=3, column=1, sticky=tk_utils.STICKY_ALL)
 
         parent.grid_rowconfigure(3, weight=1)

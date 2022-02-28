@@ -2,6 +2,7 @@ import dataclasses
 import logging
 import tkinter as tk
 import typing
+from tkinter import font
 from typing import Callable, Optional, Iterator, Type
 from datetime import date
 from dataclasses import dataclass, field
@@ -207,7 +208,10 @@ class RentManagerMainState(ViewableRecord):
 
                 # landlord payment button
                 payment_button = buttons[TransactionReason.Payment]
-                payment_button.config(text=f'Pay £{rent_calculations.balance / 100:0.2f} to landlord')
+                payment_button.config(
+                    text=f'Pay £{rent_calculations.balance / 100:0.2f} to landlord',
+                    font=tk_utils.my_fonts.derived_font('TkDefaultFont', weight=font.BOLD)
+                )
 
                 def pay_landlord():
                     add(TransactionReason.Payment, rent_calculations.balance, '', date.today())

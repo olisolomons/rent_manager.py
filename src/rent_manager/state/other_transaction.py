@@ -13,8 +13,8 @@ from traits.views import CurrencyView, StringView, DateView
 class TransactionReason(enum.Enum):
     Cost = enum.auto()
     Adjustment = enum.auto()
-    Payment = enum.auto()
     AgentFee = enum.auto()
+    Payment = enum.auto()
 
     def readable_name(self):
         if self is TransactionReason.AgentFee:

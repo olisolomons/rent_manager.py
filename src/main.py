@@ -82,6 +82,12 @@ def main() -> None:
 
         root.config(menu=app.menu(root))
 
+        def on_close():
+            if not app.prompt_unsaved_changes():
+                root.destroy()
+
+        root.protocol('WM_DELETE_WINDOW', on_close)
+
         root.mainloop()
 
     if args.port is not None:

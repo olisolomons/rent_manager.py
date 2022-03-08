@@ -260,12 +260,13 @@ class RentManagerApp(DocumentManager):
         self.open_path(file_path)
 
     def open_path(self, file_path):
+        with open(file_path, 'r') as f:
+            data = dataclass_json.load(RentManagerState, f)
         self.file_path = file_path
         self.calculation_timer.cancel()
         self.view_widget.destroy()
-        with open(file_path, 'r') as f:
-            data = dataclass_json.load(RentManagerState, f)
-            self.populate_from_data(data)
+
+        self.populate_from_data(data)
 
     def new(self):
         cancelled = self.prompt_unsaved_changes()

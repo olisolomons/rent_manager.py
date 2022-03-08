@@ -3,6 +3,7 @@ import sys
 import argparse
 import logging
 import tkinter as tk
+import traceback
 from PIL import Image
 from logging.handlers import TimedRotatingFileHandler
 from pathlib import Path
@@ -76,15 +77,6 @@ def main() -> None:
 
     def make_app_then_mainloop(launcher_socket=None):
         app = RentManagerApp(root, launcher_client=launcher_socket)
-        if args.file is not None:
-            app.open_path(args.file)
-        app.frame.pack(fill=tk.BOTH, expand=True)
-
-        root.config(menu=app.menu(root))
-
-        def on_close():
-            if not app.prompt_unsaved_changes():
-                root.destroy()
 
         def on_file_path_change(file_path):
             if file_path is None:
@@ -93,6 +85,19 @@ def main() -> None:
                 root.title(f'Rent Manager - {Path(file_path).stem}')
 
         app.file_path_change_listeners.add(on_file_path_change)
+
+        if args.file is not None:
+            try:
+                app.open_path(args.file)
+            except OSError:
+                logging.warning(f'Cannot open {args.file}:\n{traceback.format_exc()}')
+        app.frame.pack(fill=tk.BOTH, expand=True)
+
+        root.config(menu=app.menu(root))
+
+        def on_close():
+            if not app.prompt_unsaved_changes():
+                root.destroy()
 
         root.protocol('WM_DELETE_WINDOW', on_close)
 

@@ -38,7 +38,7 @@ class OtherTransaction(HasHeader):
     reason: TransactionReason
     amount: int
     comment: str
-    _date: date
+    date_: date
 
     @staticmethod
     def header_names() -> dict[str, str]:
@@ -46,12 +46,12 @@ class OtherTransaction(HasHeader):
             'reason': 'Reason',
             'amount': 'Amount',
             'comment': 'Comment',
-            '_date': 'Date',
+            'date_': 'Date',
         }
 
     @classmethod
     def configure(cls, parent: tk.Frame, amount: CurrencyView, comment: StringView,
-                  _date: DateView, reason: ReasonView,
+                  date_: DateView, reason: ReasonView,
                   comments_scroll_group=None):
         editing = amount.editing if hasattr(amount, 'editing') else False
         if not editing:
@@ -72,7 +72,7 @@ class OtherTransaction(HasHeader):
             items = [
                 (reason, 2),
                 (amount, 2),
-                (_date, 3),
+                (date_, 3),
                 (comment, 4),
             ]
             is_first = True
@@ -98,7 +98,7 @@ class OtherTransaction(HasHeader):
 
             grid('', reason(parent))
             grid('Amount:' if editing else '', amount(parent))
-            grid('Date:', _date(parent))
+            grid('Date:', date_(parent))
             if reason.data != TransactionReason.Payment:
                 grid('Comment:', comment(parent))
 

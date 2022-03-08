@@ -1,23 +1,23 @@
-import dataclasses
-import enum
-import logging
-import tkinter as tk
-from pathlib import Path
-from tkinter import filedialog
-from tkinter import messagebox
-from tkinter import simpledialog
-from typing import Callable, Optional, TYPE_CHECKING
-
 import sys
 
 import dataclass_json
+import dataclasses
+import enum
+import logging
 import report_generator
 import tk_utils
+import tkinter as tk
+from pathlib import Path
 from tk_utils import ResettableTimer
+from tkinter import filedialog
+from tkinter import messagebox
+from tkinter import simpledialog
 from traits.core import ViewWrapper
 from traits.dialog import data_dialog
 from traits.undo_manager import UndoManager
+from typing import Callable, Optional, TYPE_CHECKING
 from . import config, updater
+from .collate_and_export import export_collated_transactions
 from .menu import DocumentManager, BasicEditorMenu
 from .state.rent_arrangement_data import RentArrangementData
 from .state.rent_manager_state import RentManagerState, RentCalculations
@@ -103,6 +103,8 @@ class RentManagerApp(DocumentManager):
                 self.add_cascade(label='Reports', menu=self.reports)
 
                 self.reports.add_command(label='Generate report', command=rent_manager_self.generate_report)
+                self.reports.add_command(label='Export multiple files\' transactions CSV',
+                                         command=rent_manager_self.export_collated_transactions)
 
         self.menu = RentManagerMenu
 
@@ -169,16 +171,17 @@ class RentManagerApp(DocumentManager):
             self.calculation_results = RentCalculations.from_rent_manager_state(self.data)
             self.notify_calculations_change(self.calculation_results)
 
-    def filedialog(self, dialog):
-        top = self.frame.winfo_toplevel()
+    def filedialog(self, dialog, filetypes=(('RentManager File', '*.rman'),), modify_config_dir=True, parent=None):
+        if parent is None:
+            parent = self.frame.winfo_toplevel()
 
         initial_dir = str(Path.home())
         if self.config.file_chooser_dir is not None:
             initial_dir = self.config.file_chooser_dir
 
-        res = dialog(parent=top, initialdir=initial_dir, filetypes=[('RentManager File', '*.rman')])
+        res = dialog(parent=parent, initialdir=initial_dir, filetypes=filetypes)
 
-        if res:
+        if res and modify_config_dir:
             self.config = dataclasses.replace(self.config, file_chooser_dir=str(Path(res).parent))
 
         if res:
@@ -297,13 +300,7 @@ class RentManagerApp(DocumentManager):
         return parts[releases_index + 1]
 
     def generate_report(self):
-        top = self.frame.winfo_toplevel()
-
-        initial_dir = str(Path.home())
-        if self.config.file_chooser_dir is not None:
-            initial_dir = self.config.file_chooser_dir
-
-        res = filedialog.asksaveasfilename(parent=top, initialdir=initial_dir, filetypes=[('PDF', '*.pdf')])
+        res = self.filedialog(filedialog.asksaveasfilename, filetypes=[('PDF', '*.pdf')], modify_config_dir=False)
         if not res:
             return
 
@@ -312,3 +309,6 @@ class RentManagerApp(DocumentManager):
         logging.info(f'Generating report at {export_path}')
 
         report_generator.generate_report(self.data, self.calculation_results, export_path)
+
+    def export_collated_transactions(self):
+        export_collated_transactions(self.frame.winfo_toplevel(), self)

@@ -107,4 +107,10 @@ def dump(obj, file):
 
 
 def load(_type, file):
-    return loads(file.read(), _type)
+    data = file.read()
+    try:
+        return loads(data, _type)
+    except json.JSONDecodeError:
+        raise
+    except Exception:
+        raise json.JSONDecodeError('Cannot be interpreted as the correct type', data, 0)

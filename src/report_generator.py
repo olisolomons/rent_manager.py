@@ -1,21 +1,14 @@
 import itertools
 
-import abc
 import dataclass_json
-import operator
 import re
-import typing
-from datetime import date
-
-from pathlib import Path
-from rent_manager.state.other_transaction import TransactionReason, OtherTransaction
-from rent_manager.state.rent_payment import RentPayment
-from typing import Sequence
-
 from fpdf import FPDF, HTMLMixin
+from pathlib import Path
+from rent_manager.state.all_transactions import AnyTransaction, get_all_transactions
+from rent_manager.state.other_transaction import TransactionReason, OtherTransaction
+from rent_manager.state.rent_manager_state import RentManagerState, RentCalculations
+from typing import Sequence
 from xml.sax.saxutils import escape
-
-from rent_manager.state.rent_manager_state import RentManagerState, RentCalculations, RentManagerMainState
 
 
 class PDF(FPDF, HTMLMixin):
@@ -173,7 +166,7 @@ def generate_report(data: RentManagerState, calculations: RentCalculations, expo
     transaction: OtherTransaction
     pdf.put_table(
         ['Date', 'Amount'],
-        [[transaction._date.strftime(date_format), format_currency(transaction.amount)]
+        [[transaction.date_.strftime(date_format), format_currency(transaction.amount)]
          for transaction in data.rent_manager_main_state.other_transactions
          if transaction.reason is TransactionReason.Payment]
     )
@@ -200,77 +193,8 @@ def generate_report(data: RentManagerState, calculations: RentCalculations, expo
         rent_for_months
     )
 
-    class AnyTransaction(abc.ABC):
-        @property
-        @abc.abstractmethod
-        def date(self) -> date:
-            pass
+    all_transactions = get_all_transactions(data)
 
-        @property
-        @abc.abstractmethod
-        def type(self) -> str:
-            pass
-
-        @property
-        @abc.abstractmethod
-        def amount(self) -> int:
-            pass
-
-        @property
-        @abc.abstractmethod
-        def comment(self) -> str:
-            pass
-
-    class AnyTransactionOtherTransaction(AnyTransaction):
-        def __init__(self, inner: OtherTransaction) -> None:
-            super().__init__()
-            self.inner: OtherTransaction = inner
-
-        @property
-        def date(self) -> date:
-            return self.inner._date
-
-        @property
-        def type(self) -> str:
-            return self.inner.reason.readable_name()
-
-        @property
-        def amount(self) -> int:
-            return self.inner.amount
-
-        @property
-        def comment(self) -> str:
-            return self.inner.comment
-
-    class AnyTransactionRent(AnyTransaction):
-        def __init__(self, inner: RentPayment) -> None:
-            super().__init__()
-            self.inner = inner
-
-        @property
-        def date(self) -> date:
-            return self.inner.received_on
-
-        @property
-        def type(self) -> str:
-            return 'Rent payment'
-
-        @property
-        def amount(self) -> int:
-            return self.inner.amount
-
-        @property
-        def comment(self) -> str:
-            return f'For month {self.inner.for_month.strftime(month_format)}'
-
-    all_transactions: list[AnyTransaction] = sorted(
-        [typing.cast(AnyTransaction, AnyTransactionOtherTransaction(other_transaction))
-         for other_transaction in data.rent_manager_main_state.other_transactions]
-        +
-        [AnyTransactionRent(rent_payment) for rent_payment in data.rent_manager_main_state.rent_payments]
-        ,
-        key=operator.attrgetter('date')
-    )
     with pdf.tag('h1'):
         pdf.put('All transactions')
 
@@ -280,7 +204,7 @@ def generate_report(data: RentManagerState, calculations: RentCalculations, expo
             any_transaction.date.strftime(date_format),
             any_transaction.type,
             format_currency(any_transaction.amount),
-            any_transaction.comment + ' '
+            any_transaction.comment
         ]
         for any_transaction in all_transactions
     ])

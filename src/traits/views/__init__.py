@@ -5,3 +5,4 @@ from .date_view import DateView
 from .month_view import MonthView
 from .list_view import ListView
 from .string_view import StringView
+from .dummy_view import DummyView

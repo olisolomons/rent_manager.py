@@ -160,8 +160,8 @@ class RentManagerMainState(ViewableRecord):
         def make_other_transaction_buttons(frame: tk.Frame, add_basic: Callable[[OtherTransaction], None]) -> tk.Widget:
             nonlocal add_other_transaction, update_other_transaction_buttons, OtherTransactionScrolled
 
-            def add(reason: TransactionReason, amount: int, comment: str, _date: date) -> None:
-                return add_basic(OtherTransaction(reason, amount, comment, _date))
+            def add(reason: TransactionReason, amount: int, comment: str, date_: date) -> None:
+                return add_basic(OtherTransaction(reason, amount, comment, date_))
 
             add_other_transaction = add
 

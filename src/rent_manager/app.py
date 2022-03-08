@@ -50,7 +50,7 @@ class RentManagerApp(DocumentManager):
         self._frame.grid_columnconfigure(0, weight=1)
         self._frame.grid_rowconfigure(0, weight=1)
 
-        self.file_path: Optional[str] = None
+        self._file_path: Optional[str] = None
 
         self.changed = False
 
@@ -108,6 +108,8 @@ class RentManagerApp(DocumentManager):
 
         self.menu = RentManagerMenu
 
+        self.file_path_change_listeners: set[Callable[[str], None]] = set()
+
     def populate_from_data(self, data: RentManagerState):
         self.changed = False
         self.data = data
@@ -145,6 +147,16 @@ class RentManagerApp(DocumentManager):
     def config(self, new_config):
         self._config = new_config
         config.save(self._config)
+
+    @property
+    def file_path(self) -> Optional[str]:
+        return self._file_path
+
+    @file_path.setter
+    def file_path(self, value):
+        self._file_path = value
+        for change_listener in self.file_path_change_listeners:
+            change_listener(value)
 
     def bind_key(self, func: Callable[[], None], key: Optional[str] = None, shift: bool = False):
         ctrl = 'Command' if sys.platform == 'darwin' else 'Control'

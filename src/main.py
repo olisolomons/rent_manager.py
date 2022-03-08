@@ -1,12 +1,11 @@
+import sys
+
 import argparse
 import logging
 import tkinter as tk
+from PIL import Image
 from logging.handlers import TimedRotatingFileHandler
 from pathlib import Path
-
-import sys
-from PIL import Image
-
 from rent_manager.app import RentManagerApp
 from rent_manager.config import rent_manager_dirs
 
@@ -56,6 +55,7 @@ def set_icon(root: tk.Tk) -> None:
                     logging.info('Setting MacOS title')
                     menu = ns_application.mainMenu().itemAtIndex_(0).submenu()
                     menu.setTitle_('Rent Manager')
+
             root.after(1000, set_window_info)
         else:
             root.iconbitmap(str(logo_icon))
@@ -71,7 +71,7 @@ def main() -> None:
     else:
         root = tk.Tk()
     root.geometry(f'{w}x{h}')
-    root.title('Rent Manager')
+    root.title('Rent Manager - (new document)')
     set_icon(root)
 
     def make_app_then_mainloop(launcher_socket=None):
@@ -85,6 +85,14 @@ def main() -> None:
         def on_close():
             if not app.prompt_unsaved_changes():
                 root.destroy()
+
+        def on_file_path_change(file_path):
+            if file_path is None:
+                root.title(f'Rent Manager - (new document)')
+            else:
+                root.title(f'Rent Manager - {Path(file_path).stem}')
+
+        app.file_path_change_listeners.add(on_file_path_change)
 
         root.protocol('WM_DELETE_WINDOW', on_close)
 

@@ -41,7 +41,7 @@ jobs:
             CMD_BUILD: >
               cd launcher/ &&
               wget -q https://repo.anaconda.com/miniconda/Miniconda3-py39_4.9.2-MacOSX-x86_64.sh -O /tmp/miniconda.sh &&
-              env MACOSX_DEPLOYMENT_TARGET="10.9" python3 -m PyInstaller -F -w -n rent_manager --add-data "launcher.py:." --add-data "simple_ipc.py:." --add-data "venv_management.py:." --add-data "../launcher_requirements.txt:." --add-data "/tmp/miniconda.sh:." --icon "../logo.icns" bootstrap.py &&
+              env MACOSX_DEPLOYMENT_TARGET="10.9" python3 -m PyInstaller rent_manager.spec &&
               cd dist/ &&
               zip -r9 rent_manager rent_manager.app/
             OUT_FILE_NAME: rent_manager.zip
@@ -53,7 +53,7 @@ jobs:
             CMD_BUILD: >
               cd launcher/ &&
               C:\msys64\usr\bin\wget.exe -q https://repo.anaconda.com/miniconda/Miniconda3-py39_4.9.2-Windows-x86_64.exe -O miniconda.exe &&
-              pyinstaller -F -w -n rent_manager --add-data "launcher.py;." --add-data "simple_ipc.py;." --add-data "venv_management.py;." --add-data "../launcher_requirements.txt;." --add-data "miniconda.exe;." --icon "../logo.ico" bootstrap.py
+              pyinstaller rent_manager.spec
             OUT_FILE_NAME: rent_manager.exe
             ASSET_MIME: application/vnd.microsoft.portable-executable
             OVERRIDE_PYTHON: false
@@ -103,13 +103,3 @@ jobs:
           asset_path: ./launcher/dist/${{ matrix.OUT_FILE_NAME}}
           asset_name: ${{ matrix.OUT_FILE_NAME}}
           asset_content_type: ${{ matrix.ASSET_MIME}}
-      - name: Upload SPEC file
-        id: upload-spec-file
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.get_release_info.outputs.upload_url }}
-          asset_path: ./launcher/rent_manager.spec
-          asset_name: ${{ matrix.os }}.spec
-          asset_content_type: text/plain

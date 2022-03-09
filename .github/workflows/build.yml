@@ -103,3 +103,13 @@ jobs:
           asset_path: ./launcher/dist/${{ matrix.OUT_FILE_NAME}}
           asset_name: ${{ matrix.OUT_FILE_NAME}}
           asset_content_type: ${{ matrix.ASSET_MIME}}
+      - name: Upload SPEC file
+        id: upload-spec-file
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.get_release_info.outputs.upload_url }}
+          asset_path: ./launcher/rent_manager.spec
+          asset_name: ${{ matrix.os }}.spec
+          asset_content_type: text/plain

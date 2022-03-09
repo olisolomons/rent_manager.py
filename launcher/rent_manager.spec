@@ -40,13 +40,26 @@ exe = EXE(pyz,
           console=False , icon=icon)
 
 if platform.startswith('darwin'):
+    type_identifier = 'com.github.olisolomons.rent_manager'
     info_plist = {
         'CFBundleDocumentTypes': [
             {
-            'CFBundleTypeName': 'Rent Manager File',
-            'CFBundleTypeIconFile': icon,
-            'LSItemContentTypes': ['com.github.olisolomons.rent_manager'],
-            'LSHandlerRank': 'Owner'
+                'CFBundleTypeName': 'Rent Manager File',
+                'CFBundleTypeIconFile': 'logo.icns',
+                'LSItemContentTypes': [type_identifier],
+                'LSHandlerRank': 'Owner',
+                'CFBundleTypeRole': 'Editor'
+            }
+        ],
+        'UTExportedTypeDeclarations': [
+            {
+                'UTTypeIdentifier': type_identifier,
+                'UTTypeTagSpecification': {
+                    'public.filename-extension': 'rman'
+                },
+                'UTTypeIconFile': 'icon.icns',
+                'UTTypeDescription': 'Rent Manager File',
+                'UTTypeConformsTo': ['public.json']
             }
         ]
     }

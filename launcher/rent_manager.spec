@@ -40,7 +40,16 @@ exe = EXE(pyz,
           console=False , icon=icon)
 
 if platform.startswith('darwin'):
-    info_plist = {}
+    info_plist = {
+        'CFBundleDocumentTypes': [
+            {
+            'CFBundleTypeName': 'Rent Manager File',
+            'CFBundleTypeIconFile': icon,
+            'LSItemContentTypes': ['com.github.olisolomons.rent_manager'],
+            'LSHandlerRank': 'Owner'
+            }
+        ]
+    }
     app = BUNDLE(exe,
                  name='rent_manager.app',
                  icon=icon,

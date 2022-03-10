@@ -1,11 +1,8 @@
-from fractions import Fraction
-
-from traits.core import ViewWrapper
-import tkinter as tk
-
-from tk_utils import ValidatingEntry
 import re
-
+import tkinter as tk
+from fractions import Fraction
+from tk_utils import ValidatingEntry
+from traits.core import ViewWrapper
 from traits.views.common.string_var_undo_manager import StringEditableView
 
 

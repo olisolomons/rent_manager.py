@@ -1,13 +1,12 @@
 import queue
 import threading
+import tk_utils
 import tkinter as tk
 import typing
 from tkinter import messagebox
 from tkinter import ttk
 from tkinter.scrolledtext import ScrolledText
 from typing import Optional
-
-import tk_utils
 
 if typing.TYPE_CHECKING:
     import simple_ipc

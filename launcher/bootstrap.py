@@ -1,21 +1,20 @@
+import sys
+import time
+
 import logging
 import multiprocessing
 import queue
 import shutil
+import simple_ipc
 import socket
 import threading
 import tkinter as tk
 import traceback
+import venv_management
 from logging.handlers import TimedRotatingFileHandler
 from pathlib import Path
 from tkinter import ttk
 from tkinter.scrolledtext import ScrolledText
-
-import sys
-import time
-
-import simple_ipc
-import venv_management
 from venv_management import rent_manager_dirs, LoggedProcess
 from venv_management import user_cache, script_dir, is_windows, conda_dir, launcher_venv, launcher_files_dir, \
     venv_dir_python_relative

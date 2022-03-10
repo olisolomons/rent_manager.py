@@ -1,10 +1,10 @@
 import dataclasses
-import typing
-from dataclasses import dataclass, field
-from abc import ABC, abstractmethod
-import tkinter as tk
-from typing import TypeVar, Generic, Callable, Optional, Type, Any
 import inspect
+import tkinter as tk
+import typing
+from abc import ABC, abstractmethod
+from dataclasses import dataclass, field
+from typing import TypeVar, Generic, Callable, Optional, Type, Any
 
 
 class View(ABC):

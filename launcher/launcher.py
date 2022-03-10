@@ -1,19 +1,19 @@
+import sys
+
 import argparse
 import io
 import logging
 import re
 import shutil
+import simple_ipc
 import socket
 import traceback
+import venv_management
 from logging.handlers import TimedRotatingFileHandler
 from pathlib import Path
 from typing import Optional, Generator, Union, TypeVar, Any, Callable
-from zipfile import ZipFile
-import sys
-
-import simple_ipc
-import venv_management
 from venv_management import user_cache, venv_dir_python_relative, rent_manager_dirs, LoggedProcess
+from zipfile import ZipFile
 
 install_complete_marker = 'install_complete_marker'
 

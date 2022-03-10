@@ -1,7 +1,4 @@
-import operator
-import threading
 from tkinter import font
-from typing import Optional
 
 registry: dict[tuple, font.Font] = {}
 

@@ -1,9 +1,8 @@
+import tkinter as tk
 from abc import abstractmethod
 from dataclasses import dataclass
-from typing import TypeVar, Generic, Optional
-
 from traits.core import EditableView, Action
-import tkinter as tk
+from typing import TypeVar, Generic, Optional
 
 
 @dataclass

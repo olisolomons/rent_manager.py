@@ -1,8 +1,7 @@
 from dataclasses import dataclass, field
-from typing import Optional
-
-from traits.core import EditableView, ViewWrapper, Action
 from datetime import datetime, timedelta
+from traits.core import EditableView, ViewWrapper, Action
+from typing import Optional
 
 
 @dataclass

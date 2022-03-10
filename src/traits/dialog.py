@@ -1,8 +1,7 @@
 import tkinter as tk
 from tkinter import simpledialog
-from typing import TypeVar, Callable
-
 from traits.core import ViewWrapper, ViewableRecord
+from typing import TypeVar, Callable
 
 T = TypeVar('T')
 

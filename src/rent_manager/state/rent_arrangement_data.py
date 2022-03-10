@@ -1,10 +1,8 @@
+import tkinter as tk
 from dataclasses import dataclass, field
 from datetime import date
-
 from traits.core import ViewableRecord
 from traits.views import DateView, CurrencyView, FloatInRange
-
-import tkinter as tk
 
 
 @dataclass

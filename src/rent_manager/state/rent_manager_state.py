@@ -1,25 +1,23 @@
+import itertools
+
 import dataclasses
 import logging
+import tk_utils
 import tkinter as tk
 import typing
-from tkinter import font
-from typing import Callable, Optional, Iterator, Type
-from datetime import date
 from dataclasses import dataclass, field
-
-import tk_utils
+from datetime import date
 from tk_utils import Spacer
 from tk_utils.horizontal_scrolled_group import HorizontalScrolledGroup
+from tkinter import font
 from traits.core import ViewableRecord, partial_record_view, RecordView
-from traits.views import ListView, CurrencyView, DateView
 from traits.dialog import data_dialog
-
-from .rent_arrangement_data import RentArrangementData
-from .other_transaction import OtherTransaction, TransactionReason, OtherTransactionView
-from .rent_payment import RentPayment
 from traits.header import header
-
-import itertools
+from traits.views import ListView, CurrencyView, DateView
+from typing import Callable, Optional, Iterator, Type
+from .other_transaction import OtherTransaction, TransactionReason, OtherTransactionView
+from .rent_arrangement_data import RentArrangementData
+from .rent_payment import RentPayment
 
 
 @dataclass

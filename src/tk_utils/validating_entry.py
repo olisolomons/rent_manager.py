@@ -1,6 +1,6 @@
 import re
-from typing import Callable
 import tkinter as tk
+from typing import Callable
 
 
 class ValidatingEntry(tk.Entry):

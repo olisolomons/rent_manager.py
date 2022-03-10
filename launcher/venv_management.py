@@ -1,4 +1,8 @@
+import itertools
+import sys
+
 import abc
+import appdirs
 import asyncio
 import logging
 import queue
@@ -6,10 +10,6 @@ import subprocess
 import threading
 from pathlib import Path
 from typing import Type
-
-import appdirs
-import itertools
-import sys
 
 is_windows = sys.platform.startswith('win')
 

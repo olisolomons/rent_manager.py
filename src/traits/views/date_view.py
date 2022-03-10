@@ -1,7 +1,6 @@
-from dataclasses import dataclass
 import tkinter as tk
+from dataclasses import dataclass
 from datetime import date
-
 from traits.core import ViewableRecord, Isomorphism, iso_view
 from traits.views.int_in_range import IntInRange
 

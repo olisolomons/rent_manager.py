@@ -16,7 +16,7 @@ from traits.core import ViewWrapper
 from traits.dialog import data_dialog
 from traits.undo_manager import UndoManager
 from typing import Callable, Optional, TYPE_CHECKING
-from . import config, updater
+from . import config, updater, license_
 from .collate_and_export import export_collated_transactions
 from .menu import DocumentManager, BasicEditorMenu
 from .state.rent_arrangement_data import RentArrangementData
@@ -106,9 +106,16 @@ class RentManagerApp(DocumentManager):
                 self.reports.add_command(label='Export multiple files\' transactions CSV',
                                          command=rent_manager_self.export_collated_transactions)
 
+                license_menu = tk.Menu(self, tearoff=False)
+                self.add_cascade(label='License', menu=license_menu)
+
+                license_menu.add_command(label='View License', command=lambda: license_.popup(parent))
+
         self.menu = RentManagerMenu
 
         self.file_path_change_listeners: set[Callable[[str], None]] = set()
+
+        self.frame.after_idle(self.check_license_accepted)
 
     def populate_from_data(self, data: RentManagerState):
         self.changed = False
@@ -325,3 +332,11 @@ class RentManagerApp(DocumentManager):
 
     def export_collated_transactions(self):
         export_collated_transactions(self.frame.winfo_toplevel(), self)
+
+    def check_license_accepted(self):
+        if not self.config.accepted_license:
+            accepted = license_.popup(self.frame, agree_option=True)
+            if accepted:
+                self.config = dataclasses.replace(self.config, accepted_license=True)
+            else:
+                self.frame.winfo_toplevel().destroy()

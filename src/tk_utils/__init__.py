@@ -6,5 +6,6 @@ from .complete_bind import complete_bind
 from .spacer import Spacer
 from .timer import Timer, ResettableTimer
 from . import my_fonts
+from .hyperlink import Hyperlink
 
 STICKY_ALL = tkinter.N + tkinter.E + tkinter.S + tkinter.W

@@ -12,6 +12,7 @@ config_file = Path(rent_manager_dirs.user_data_dir) / 'config.json'
 @dataclass
 class RentManagerConfig:
     file_chooser_dir: str = None
+    accepted_license: bool = False
 
 
 def load() -> RentManagerConfig:

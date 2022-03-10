@@ -32,6 +32,7 @@ class Serializer(ABC):
             return _type(**{
                 field.name: cls.load(data[field.name], field.type)
                 for field in dataclasses.fields(_type)
+                if field.name in data
             })
         for ancestor_type in _type.mro():
             if ancestor_type in cls.registry:

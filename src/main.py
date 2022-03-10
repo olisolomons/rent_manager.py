@@ -21,7 +21,7 @@ handler = TimedRotatingFileHandler(filename=log_dir / 'app', when='D', backupCou
 
 logging.basicConfig(
     format='[%(asctime)s] [%(levelname)s] [%(name)s] - %(message)s',
-    handlers=[handler],
+    handlers=[handler, logging.StreamHandler(sys.stdout)],
     level=logging.INFO
 )
 

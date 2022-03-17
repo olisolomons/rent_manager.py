@@ -1,14 +1,15 @@
 import itertools
-
-import dataclass_json
 import re
-from fpdf import FPDF, HTMLMixin
 from pathlib import Path
+from typing import Sequence
+from xml.sax.saxutils import escape
+
+# noinspection PyPackageRequirements
+from fpdf import FPDF, HTMLMixin
+
 from rent_manager.state.all_transactions import AnyTransaction, get_all_transactions
 from rent_manager.state.other_transaction import TransactionReason, OtherTransaction
 from rent_manager.state.rent_manager_state import RentManagerState, RentCalculations
-from typing import Sequence
-from xml.sax.saxutils import escape
 
 
 class PDF(FPDF, HTMLMixin):
@@ -41,6 +42,7 @@ class PDFGenerator:
 
     def put_table(self, headers: Sequence[str | tuple[str, float]], data):
         with self.tag('table', border='1'):
+            # noinspection SpellCheckingInspection
             with self.tag('thead'):
                 with self.tag('tr', bgcolor='#d8e1ed'):
                     def get_weight(header):
@@ -58,6 +60,7 @@ class PDFGenerator:
                                 self.text(header)
                             else:
                                 self.text(header[0])
+            # noinspection SpellCheckingInspection
             with self.tag('tbody'):
                 for i, row in enumerate(data):
                     wrapped_row = [self._wrap(cell, width) for cell, width in zip(row, widths)]
@@ -135,7 +138,10 @@ class AutoClosingTag:
 
 
 def format_currency(amount, symbol='£'):
-    return f'{symbol}{amount / 100:.2f}'
+    if amount < 0:
+        return f'-{format_currency(-amount, symbol)}'
+    else:
+        return f'{symbol}{amount / 100:.2f}'
 
 
 def generate_report(data: RentManagerState, calculations: RentCalculations, export_path: str | Path):
@@ -177,12 +183,7 @@ def generate_report(data: RentManagerState, calculations: RentCalculations, expo
     rent_for_months = []
     for month, paid in calculations.rent_for_months:
         month_arrears = data.rent_arrangement_data.monthly_rent - paid
-        if month_arrears == 0:
-            color = '00AA00'
-        elif month_arrears > 0:
-            color = 'DAD000'
-        else:
-            color = 'AA0000'
+
         rent_for_months.append([
             month.strftime(month_format), format_currency(paid),
             format_currency(month_arrears)
@@ -210,10 +211,3 @@ def generate_report(data: RentManagerState, calculations: RentCalculations, expo
     ])
 
     pdf.output(str(export_path))
-
-
-if __name__ == '__main__':
-    data = '{"rent_manager_main_state": {"rent_payments": [{"amount": 1000, "received_on": "2022-02-25", "for_month": "2021-02-01"}, {"amount": 500, "received_on": "2022-02-25", "for_month": "2021-03-01"}, {"amount": 1100, "received_on": "2022-02-25", "for_month": "2021-04-01"}, {"amount": 1000, "received_on": "2022-02-27", "for_month": "2021-05-01"}], "other_transactions": [{"reason": 3, "amount": 2600, "comment": "", "_date": "2022-02-27"}, {"reason": 4, "amount": 130, "comment": "Delayed because of long reasons that take up a lot of space, forcing a multi-line comment", "_date": "2022-02-27"}, {"reason": 4, "amount": 50, "comment": "For month 05/2021", "_date": "2022-02-27"}, {"reason": 3, "amount": 820, "comment": "", "_date": "2022-02-27"}, {"reason": 4, "amount": 0, "comment": "AAAAAAAAAAAABBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB", "_date": "2022-02-27"}, {"reason": 2, "amount": 0, "comment": "thisisareallylongsentencethathasnospacesinordertotestmytextwrappingfunctionalityyoumightthingthesentencewouldendherebutitactuallydoesntbecauseineedtokeepramblingtofillspace", "_date": "2022-02-27"}, {"reason": 2, "amount": 0, "comment": "And short + looooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooong g", "_date": "2022-02-27"}]}, "rent_arrangement_data": {"start_date": "2021-02-26", "monthly_rent": 1000, "agents_fee": 5.0}}'
-    data = dataclass_json.loads(data, RentManagerState)
-    calc = RentCalculations.from_rent_manager_state(data)
-    generate_report(data, calc, 'test.pdf')

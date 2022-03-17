@@ -1,12 +1,13 @@
-import sys
-
 import argparse
 import logging
+import sys
 import tkinter as tk
 import traceback
-from PIL import Image
 from logging.handlers import TimedRotatingFileHandler
 from pathlib import Path
+
+from PIL import Image
+
 from rent_manager.app import RentManagerApp
 from rent_manager.config import rent_manager_dirs
 
@@ -33,7 +34,9 @@ def set_icon(root: tk.Tk) -> None:
         root.my_icon_photo = photo = tk.PhotoImage(file=logo_png)
         root.iconphoto(True, photo)
     else:
+        # noinspection SpellCheckingInspection
         icon_type = 'icns' if sys.platform.startswith('darwin') else 'ico'
+        # noinspection SpellCheckingInspection
         icon_sizes = [(16 << i, 16 << i) + (1,) * (icon_type == 'icns') for i in range(7)]
 
         logo_icon = Path(__file__).parent.parent / f'logo.{icon_type}'

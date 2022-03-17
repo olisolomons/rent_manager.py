@@ -3,11 +3,12 @@ import tkinter as tk
 import typing
 from abc import ABC
 from dataclasses import dataclass
+from tkinter import messagebox
+from typing import Generic, TypeVar, Optional, Callable, Any
+
 from tk_utils.complete_bind import complete_bind
 from tk_utils.vertical_scrolled_frame import VerticalScrolledFrame
-from tkinter import messagebox
 from traits.core import EditableView, ViewWrapper, Action
-from typing import Generic, TypeVar, Optional, Callable, Any
 
 T = TypeVar('T', bound=Callable[[tk.Widget], tk.Widget])
 

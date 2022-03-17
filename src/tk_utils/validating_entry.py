@@ -11,6 +11,7 @@ class ValidatingEntry(tk.Entry):
         self.string_var = tk.StringVar(value=initial_value)
         self.string_var.trace('w', self.on_write)
 
+        # noinspection SpellCheckingInspection
         kw['textvariable'] = self.string_var
         super().__init__(parent, **kw)
 

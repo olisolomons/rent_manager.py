@@ -1,7 +1,8 @@
 import tkinter as tk
 from tkinter import simpledialog
-from traits.core import ViewWrapper, ViewableRecord
 from typing import TypeVar, Callable
+
+from traits.core import ViewWrapper, ViewableRecord
 
 T = TypeVar('T')
 
@@ -31,6 +32,7 @@ def data_dialog(root: tk.Misc, data: T, title: str, view_func: Callable[[T], Vie
             w = self.view(master)
             w.pack(fill=tk.BOTH)
 
+        # noinspection PyUnresolvedReferences
         def buttonbox(self):
             box = tk.Frame(self)
 

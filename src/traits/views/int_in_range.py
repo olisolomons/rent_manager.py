@@ -1,8 +1,9 @@
-import tk_utils
 import tkinter as tk
+from typing import Callable, Optional
+
+import tk_utils
 from traits.core import ViewWrapper
 from traits.views.common.string_var_undo_manager import StringEditableView
-from typing import Callable, Optional
 
 
 class _IntInRange(StringEditableView):

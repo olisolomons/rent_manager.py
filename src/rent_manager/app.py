@@ -1,21 +1,21 @@
-import sys
-
-import dataclass_json
 import dataclasses
 import enum
 import logging
-import report_generator
-import tk_utils
+import sys
 import tkinter as tk
 from pathlib import Path
-from tk_utils import ResettableTimer
 from tkinter import filedialog
 from tkinter import messagebox
 from tkinter import simpledialog
+from typing import Callable, Optional, TYPE_CHECKING
+
+import dataclass_json
+import report_generator
+import tk_utils
+from tk_utils import ResettableTimer
 from traits.core import ViewWrapper
 from traits.dialog import data_dialog
 from traits.undo_manager import UndoManager
-from typing import Callable, Optional, TYPE_CHECKING
 from . import config, updater, license_
 from .collate_and_export import export_collated_transactions
 from .menu import DocumentManager, BasicEditorMenu

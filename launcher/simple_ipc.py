@@ -52,7 +52,7 @@ class Server:
         return self.sock.getsockname()[1]
 
     def accept(self):
-        conn, addr = self.sock.accept()
+        conn, address = self.sock.accept()
         return Channel(conn)
 
     def recv_all(self, channel=None):

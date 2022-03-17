@@ -69,8 +69,7 @@ class HorizontalScrolledGroup:
         # also updating the scrollbar
         def _configure_interior(_event):
             # update the scrollbars to match the size of the inner frame
-            size = (interior.winfo_reqwidth(), interior.winfo_reqheight())
-            canvas.config(scrollregion="0 0 %s %s" % size)
+            canvas.config(scrollregion=(0, 0, interior.winfo_reqwidth(), interior.winfo_reqheight()))
             if interior.winfo_reqheight() != canvas.winfo_height():
                 # update the canvas's width to fit the inner frame
                 canvas.config(height=interior.winfo_reqheight())

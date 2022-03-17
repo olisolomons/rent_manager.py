@@ -1,20 +1,20 @@
-import sys
-import time
-
 import logging
 import multiprocessing
 import queue
 import shutil
-import simple_ipc
 import socket
+import sys
 import threading
+import time
 import tkinter as tk
 import traceback
-import venv_management
 from logging.handlers import TimedRotatingFileHandler
 from pathlib import Path
 from tkinter import ttk
 from tkinter.scrolledtext import ScrolledText
+
+import simple_ipc
+import venv_management
 from venv_management import rent_manager_dirs, LoggedProcess
 from venv_management import user_cache, script_dir, is_windows, conda_dir, launcher_venv, launcher_files_dir, \
     venv_dir_python_relative
@@ -179,6 +179,7 @@ class InstallerApp(tk.Tk):
                 message.insert(tk.CURRENT, f'An error has occurred. '
                                            f'Please copy this text and send it to the developer:\n\n'
                                            f'{tb}\n{rent_manager_dirs.user_log_dir=}')
+                # noinspection SpellCheckingInspection
                 message.grid(row=0, column=0, sticky='NESW')
                 message.config(state=tk.DISABLED)
                 message.bind("<1>", lambda _event: message.focus_set())

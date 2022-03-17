@@ -2,6 +2,7 @@ import abc
 import operator
 import typing
 from datetime import date
+
 from .other_transaction import OtherTransaction
 from .rent_manager_state import RentManagerState
 from .rent_payment import RentPayment

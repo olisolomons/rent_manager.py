@@ -1,12 +1,13 @@
 import queue
 import threading
-import tk_utils
 import tkinter as tk
 import typing
 from tkinter import messagebox
 from tkinter import ttk
 from tkinter.scrolledtext import ScrolledText
 from typing import Optional
+
+import tk_utils
 
 if typing.TYPE_CHECKING:
     import simple_ipc
@@ -131,7 +132,7 @@ def check_for_updates(root: tk.Misc, client: 'simple_ipc.Channel', current_versi
                     message.insert(tk.CURRENT, f'An error has occurred. '
                                                f'Please copy this text and send it to the developer:\n\n'
                                                f'{error_traceback}\n{rent_manager_dirs.user_log_dir=}')
-                    message.grid(row=0, column=0, sticky='NESW')
+                    message.grid(row=0, column=0, sticky=tk_utils.STICKY_ALL)
                     message.config(state=tk.DISABLED)
                     message.bind("<1>", lambda _event: message.focus_set())
 
@@ -163,9 +164,6 @@ def check_for_updates(root: tk.Misc, client: 'simple_ipc.Channel', current_versi
             updater_dialog.wait_visibility()
             updater_dialog.grab_set()
             updater_dialog.wait_window(updater_dialog)
-
-
-
         else:
             messagebox.showinfo('Updates', f'Latest version is {latest_version}. You are already on the '
                                            f'latest version.')

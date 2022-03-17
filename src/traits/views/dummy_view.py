@@ -1,12 +1,13 @@
-from traits.core import EditableView, ViewWrapper
 from typing import Generic, TypeVar
+
+from traits.core import EditableView, ViewWrapper
 
 T = TypeVar('T')
 Act = TypeVar('Act')
 
 
 class _DummyView(Generic[T], EditableView[T, None]):
-    def __init__(self, parent, data: T):
+    def __init__(self, _parent, data: T):
         self.data = data
 
     @property

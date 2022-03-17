@@ -1,25 +1,25 @@
 import csv
-
-import dataclass_json
 import json
 import logging
-import report_generator
 import threading
-import tk_utils
 import tkinter as tk
 import traceback
 import typing
 from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
+from tkinter import filedialog, messagebox
+from typing import Callable, Any
+
+import dataclass_json
+import report_generator
+import tk_utils
 from rent_manager.state.all_transactions import get_all_transactions
 from rent_manager.state.other_transaction import OtherTransaction
 from rent_manager.state.rent_manager_state import RentManagerState
 from rent_manager.state.rent_payment import RentPayment
-from tkinter import filedialog, messagebox
 from traits.core import ViewableRecord
 from traits.views import DummyView, ListView, IntInRange
-from typing import Callable, Any
 
 
 @dataclass

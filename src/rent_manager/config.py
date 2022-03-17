@@ -1,7 +1,9 @@
-import appdirs
-import dataclass_json
 from dataclasses import dataclass
 from pathlib import Path
+
+import appdirs
+
+import dataclass_json
 
 rent_manager_dirs = appdirs.AppDirs('RentManager')
 config_file = Path(rent_manager_dirs.user_data_dir) / 'config.json'

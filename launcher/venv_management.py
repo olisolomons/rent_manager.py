@@ -1,15 +1,15 @@
-import itertools
-import sys
-
 import abc
-import appdirs
 import asyncio
+import itertools
 import logging
 import queue
 import subprocess
+import sys
 import threading
 from pathlib import Path
 from typing import Type
+
+import appdirs
 
 is_windows = sys.platform.startswith('win')
 
@@ -48,6 +48,7 @@ def new_venv(destination, requirements, channels=()):
 
 def popen_in_venv(venv, command: list, **kwargs) -> 'LoggedProcess':
     if is_windows:
+        # noinspection SpellCheckingInspection
         kwargs['creationflags'] = subprocess.CREATE_NO_WINDOW
 
     return LoggedProcess.popen([conda_exec, 'run', '-p', venv, *command], **kwargs)

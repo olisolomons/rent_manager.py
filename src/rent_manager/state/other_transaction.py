@@ -62,7 +62,7 @@ class OtherTransaction(HasHeader):
                     def __init__(self, parent):
                         self.item = comments_scroll_group.add_frame(parent)
                         self.item.interior.config(bg='red')
-                        old_comment(self.item.interior).pack(fill=tk.BOTH, anchor=tk.N + tk.W)
+                        old_comment(self.item.interior).pack(fill=tk.BOTH, anchor='nw')
 
                     def grid(self, **kwargs):
                         self.item.canvas.grid(**kwargs)

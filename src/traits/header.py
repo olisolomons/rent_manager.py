@@ -1,12 +1,13 @@
-import tk_utils
 import tkinter as tk
 import typing
 from abc import ABCMeta, abstractmethod
 from dataclasses import dataclass
+from typing import Type, Optional, Callable
+
+import tk_utils
 from tk_utils import Spacer
 from traits.core import ViewableRecord, ViewWrapper
 from traits.views import ListView
-from typing import Type, Optional, Callable
 
 
 class HasHeader(ViewableRecord, metaclass=ABCMeta):

@@ -1,9 +1,10 @@
 import logging
-import tk_utils
 import tkinter as tk
 import traceback
 from pathlib import Path
 from tkinter.scrolledtext import ScrolledText
+
+import tk_utils
 
 license_text = None
 license_file = Path().resolve().parent / 'LICENSE'

@@ -1,20 +1,20 @@
-import itertools
-
 import dataclasses
+import itertools
 import logging
-import tk_utils
 import tkinter as tk
 import typing
 from dataclasses import dataclass, field
 from datetime import date
+from tkinter import font
+from typing import Callable, Optional, Iterator, Type
+
+import tk_utils
 from tk_utils import Spacer
 from tk_utils.horizontal_scrolled_group import HorizontalScrolledGroup
-from tkinter import font
 from traits.core import ViewableRecord, partial_record_view, RecordView
 from traits.dialog import data_dialog
 from traits.header import header
 from traits.views import ListView, CurrencyView, DateView
-from typing import Callable, Optional, Iterator, Type
 from .other_transaction import OtherTransaction, TransactionReason, OtherTransactionView
 from .rent_arrangement_data import RentArrangementData
 from .rent_payment import RentPayment
@@ -153,6 +153,7 @@ class RentManagerMainState(ViewableRecord):
         def update_other_transaction_buttons():
             pass
 
+        # noinspection PyPep8Naming
         OtherTransactionScrolled: Optional[Type[OtherTransaction]] = None
 
         def make_other_transaction_buttons(frame: tk.Frame, add_basic: Callable[[OtherTransaction], None]) -> tk.Widget:
@@ -170,6 +171,7 @@ class RentManagerMainState(ViewableRecord):
             def view(record_view: OtherTransactionView, parent: tk.Misc) -> tk.Widget:
                 return record_view(parent, comments_scroll_group=comments_scroll_group)
 
+            # noinspection PyPep8Naming
             OtherTransactionScrolled = partial_record_view(
                 OtherTransactionView,
                 OtherTransaction,

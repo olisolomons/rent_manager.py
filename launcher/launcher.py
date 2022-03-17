@@ -1,19 +1,19 @@
-import sys
-
 import argparse
 import io
 import logging
 import re
 import shutil
-import simple_ipc
 import socket
+import sys
 import traceback
-import venv_management
 from logging.handlers import TimedRotatingFileHandler
 from pathlib import Path
 from typing import Optional, Generator, Union, TypeVar, Any, Callable
-from venv_management import user_cache, venv_dir_python_relative, rent_manager_dirs, LoggedProcess
 from zipfile import ZipFile
+
+import simple_ipc
+import venv_management
+from venv_management import user_cache, venv_dir_python_relative, rent_manager_dirs, LoggedProcess
 
 install_complete_marker = 'install_complete_marker'
 
@@ -45,7 +45,7 @@ def parse_release(release_name: str) -> list[int]:
 def get_latest_installed_release() -> Optional[Path]:
     """
     Get the latest_release release, deleting all older releases or incomplete installs
-    :return: The latest_release release directory, or None if there is no complete installed release
+    :return: The latest_release release directory, or None if there is no completely installed release
     """
     releases_dir = user_cache / 'releases'
     if not releases_dir.is_dir():
@@ -63,6 +63,7 @@ def get_latest_installed_release() -> Optional[Path]:
 
 
 def get_latest_release():
+    # noinspection PyPackageRequirements
     from github import Github
     g = Github()
     repo = g.get_repo('olisolomons/rent_manager.py')
@@ -74,6 +75,7 @@ def install_latest_release() -> Generator[str, Any, LoggedProcess]:
     Install the latest_release release
     :return: The directory into which the release was installed
     """
+    # noinspection PyPackageRequirements
     import requests
 
     yield 'Finding latest release'

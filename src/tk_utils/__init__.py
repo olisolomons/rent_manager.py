@@ -1,4 +1,5 @@
 import tkinter
+
 from . import my_fonts
 from .complete_bind import complete_bind
 from .hyperlink import Hyperlink

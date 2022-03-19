@@ -12,15 +12,20 @@ from traits.views import CurrencyView, StringView, DateView
 
 class TransactionReason(enum.Enum):
     Cost = enum.auto()
-    Adjustment = enum.auto()
+    FloatIncrease = enum.auto()
     AgentFee = enum.auto()
-    Payment = enum.auto()
+    ToLandlord = enum.auto()
 
     def readable_name(self):
-        if self is TransactionReason.AgentFee:
-            return 'Agent Fee'
-        else:
-            return self.name
+        match self:
+            case TransactionReason.AgentFee:
+                return 'Agent Fee'
+            case TransactionReason.FloatIncrease:
+                return 'Float Increase'
+            case TransactionReason.ToLandlord:
+                return 'To Landlord'
+            case _:
+                return self.name
 
 
 class _ReasonView(View):
@@ -99,7 +104,7 @@ class OtherTransaction(HasHeader):
             grid('', reason(parent))
             grid('Amount:' if editing else '', amount(parent))
             grid('Date:', date_(parent))
-            if reason.data != TransactionReason.Payment:
+            if reason.data != TransactionReason.ToLandlord:
                 grid('Comment:', comment(parent))
 
 

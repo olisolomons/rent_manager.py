@@ -29,8 +29,12 @@ class AnyTransaction(abc.ABC):
     def comment(self) -> str:
         pass
 
+    @abc.abstractmethod
+    def unwrap(self):
+        pass
 
-class AnyTransactionOtherTransaction(AnyTransaction):
+
+class AnyTransactionOther(AnyTransaction):
     def __init__(self, inner: OtherTransaction) -> None:
         super().__init__()
         self.inner: OtherTransaction = inner
@@ -51,11 +55,14 @@ class AnyTransactionOtherTransaction(AnyTransaction):
     def comment(self) -> str:
         return self.inner.comment
 
+    def unwrap(self):
+        return self.inner
+
 
 class AnyTransactionRent(AnyTransaction):
     def __init__(self, inner: RentPayment) -> None:
         super().__init__()
-        self.inner = inner
+        self.inner: RentPayment = inner
 
     @property
     def date(self) -> date:
@@ -74,6 +81,9 @@ class AnyTransactionRent(AnyTransaction):
         month_format = '%b %Y'
         return f'For month {self.inner.for_month.strftime(month_format)}'
 
+    def unwrap(self):
+        return self.inner
+
 
 def get_all_transactions(data: RentManagerState) -> list[AnyTransaction]:
     """
@@ -82,10 +92,11 @@ def get_all_transactions(data: RentManagerState) -> list[AnyTransaction]:
     :return: the combined list of all transactions
     """
     return sorted(
-        [typing.cast(AnyTransaction, AnyTransactionOtherTransaction(other_transaction))
-         for other_transaction in data.rent_manager_main_state.other_transactions]
+        [typing.cast(AnyTransaction, AnyTransactionRent(rent_payment)) for rent_payment in
+         data.rent_manager_main_state.rent_payments]
         +
-        [AnyTransactionRent(rent_payment) for rent_payment in data.rent_manager_main_state.rent_payments]
+        [AnyTransactionOther(other_transaction)
+         for other_transaction in data.rent_manager_main_state.other_transactions]
         ,
         key=operator.attrgetter('date')
     )

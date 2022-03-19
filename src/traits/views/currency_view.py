@@ -16,7 +16,8 @@ class _CurrencyView(StringEditableView[int]):
 
     @classmethod
     def view(cls, parent, data):
-        return tk.Label(parent, text=cls.currency_symbol + cls.data_string(data))
+        sign = '-' if data < 0 else ''
+        return tk.Label(parent, text=sign + cls.currency_symbol + cls.data_string(abs(data)))
 
     def __init__(self, parent, data):
         super().__init__()

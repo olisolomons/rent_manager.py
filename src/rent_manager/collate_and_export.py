@@ -12,8 +12,8 @@ from tkinter import filedialog, messagebox
 from typing import Callable, Any
 
 import dataclass_json
-import report_generator
 import tk_utils
+from currency import format_currency
 from rent_manager.state.all_transactions import get_all_transactions
 from rent_manager.state.other_transaction import OtherTransaction
 from rent_manager.state.rent_manager_state import RentManagerState
@@ -198,7 +198,7 @@ def export_collated_transactions(root, rent_manager_self):
                                     [
                                         transaction.date.strftime(date_format),
                                         transaction.type,
-                                        report_generator.format_currency(transaction.amount),
+                                        format_currency(transaction.amount),
                                         transaction.comment
                                     ]
                                 )

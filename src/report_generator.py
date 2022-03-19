@@ -7,9 +7,11 @@ from xml.sax.saxutils import escape
 # noinspection PyPackageRequirements
 from fpdf import FPDF, HTMLMixin
 
-from rent_manager.state.all_transactions import AnyTransaction, get_all_transactions
+from currency import format_currency
+from rent_manager.state.all_transactions import AnyTransaction
 from rent_manager.state.other_transaction import TransactionReason, OtherTransaction
-from rent_manager.state.rent_manager_state import RentManagerState, RentCalculations
+from rent_manager.state.rent_calculations import RentCalculations, BalanceAnnotatedTransaction
+from rent_manager.state.rent_manager_state import RentManagerState
 
 
 class PDF(FPDF, HTMLMixin):
@@ -137,31 +139,32 @@ class AutoClosingTag:
         self.report_generator.put(f'</{self.tag_name}>')
 
 
-def format_currency(amount, symbol='£'):
-    if amount < 0:
-        return f'-{format_currency(-amount, symbol)}'
-    else:
-        return f'{symbol}{amount / 100:.2f}'
-
-
 def generate_report(data: RentManagerState, calculations: RentCalculations, export_path: str | Path):
     pdf = PDFGenerator()
     with pdf.tag('h1'):
         pdf.put('Summary')
 
-    non_payment_costs = format_currency(
-        calculations.total_costs - calculations.other_transaction_sums[TransactionReason.Payment]
+    costs_and_fees = format_currency(
+        calculations.other_transaction_sums[TransactionReason.Cost]
+        + calculations.other_transaction_sums[TransactionReason.AgentFee]
     )
-    total_payments = format_currency(calculations.other_transaction_sums[TransactionReason.Payment])
+    total_payments = format_currency(calculations.other_transaction_sums[TransactionReason.ToLandlord])
+    arrangements = data.rent_arrangement_data
+    surplus_float = calculations.float_ - arrangements.base_float
+    if surplus_float > 0:
+        float_message = (f'{format_currency(arrangements.base_float)} + {format_currency(surplus_float)} = '
+                         f'{format_currency(calculations.float_)}')
+    else:
+        float_message = format_currency(calculations.float_)
     pdf.put_table(
         [' ', 'Amount'],
         [
             ['Total rent received', format_currency(calculations.total_rent_received)],
-            ['Costs', non_payment_costs],
+            ['Costs', costs_and_fees],
             ['Payments to landlord', total_payments],
-            ['Balance',
-             f'{format_currency(calculations.total_rent_received)} - {non_payment_costs} - {total_payments} = '
-             f'{format_currency(calculations.balance)}']
+            ['Balance', format_currency(calculations.balance)],
+            [f'Float (base float = {format_currency(arrangements.base_float)})',
+             float_message]
         ]
     )
 
@@ -174,7 +177,7 @@ def generate_report(data: RentManagerState, calculations: RentCalculations, expo
         ['Date', 'Amount'],
         [[transaction.date_.strftime(date_format), format_currency(transaction.amount)]
          for transaction in data.rent_manager_main_state.other_transactions
-         if transaction.reason is TransactionReason.Payment]
+         if transaction.reason is TransactionReason.ToLandlord]
     )
 
     with pdf.tag('h1'):
@@ -182,32 +185,35 @@ def generate_report(data: RentManagerState, calculations: RentCalculations, expo
 
     rent_for_months = []
     for month, paid in calculations.rent_for_months:
-        month_arrears = data.rent_arrangement_data.monthly_rent - paid
+        month_arrears = arrangements.monthly_rent - paid
 
         rent_for_months.append([
             month.strftime(month_format), format_currency(paid),
             format_currency(month_arrears)
-            # f'<font color="#{color}">' + format_currency(month_arrears) + '</font>'
         ])
     pdf.put_table(
         ['Month', 'Amount Paid', 'Arrears for month'],
         rent_for_months
     )
 
-    all_transactions = get_all_transactions(data)
+    all_transactions = calculations.balance_annotated_transactions
 
     with pdf.tag('h1'):
         pdf.put('All transactions')
 
     any_transaction: AnyTransaction
-    pdf.put_table(['Date', 'Type', 'Amount', ('Comment', 3)], [
+    annotated_transaction: BalanceAnnotatedTransaction
+    pdf.put_table(['Date', 'Type', 'Amount', ('Comment', 2), 'Balance', 'Float'], [
         [
             any_transaction.date.strftime(date_format),
             any_transaction.type,
             format_currency(any_transaction.amount),
-            any_transaction.comment
+            any_transaction.comment,
+            format_currency(annotated_transaction.current_balance),
+            format_currency(annotated_transaction.current_float)
         ]
-        for any_transaction in all_transactions
+        for annotated_transaction in all_transactions
+        for any_transaction in (annotated_transaction.inner,)
     ])
 
     pdf.output(str(export_path))

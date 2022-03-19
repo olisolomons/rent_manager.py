@@ -20,7 +20,8 @@ from . import config, updater, license_
 from .collate_and_export import export_collated_transactions
 from .menu import DocumentManager, BasicEditorMenu
 from .state.rent_arrangement_data import RentArrangementData
-from .state.rent_manager_state import RentManagerState, RentCalculations
+from .state.rent_calculations import RentCalculations
+from .state.rent_manager_state import RentManagerState
 
 if TYPE_CHECKING:
     import simple_ipc
@@ -294,10 +295,11 @@ class RentManagerApp(DocumentManager):
 
     def undo(self):
         self.undo_manager.undo()
-        # self.on_change(None)
+        self.on_change(None)
 
     def redo(self):
         self.undo_manager.redo()
+        self.on_change(None)
 
     def edit_rent_arrangements(self):
         new_rent_arrangement_data = data_dialog(self._frame, self.data.rent_arrangement_data, 'Edit Rent Arrangements')

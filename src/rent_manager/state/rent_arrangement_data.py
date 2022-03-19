@@ -11,10 +11,16 @@ class RentArrangementData(ViewableRecord):
     start_date: date = field(default_factory=date.today)
     monthly_rent: int = 0
     agents_fee: float = 0
+    base_float: int = 0
+    initial_float: int = 0
+    initial_balance: int = 0
 
     @staticmethod
-    def configure(parent: tk.Frame, start_date: DateView, monthly_rent: CurrencyView,
-                  agents_fee: FloatInRange):
+    def configure(parent: tk.Frame,
+                  start_date: DateView, monthly_rent: CurrencyView,
+                  agents_fee: FloatInRange,
+                  base_float: CurrencyView, initial_float: CurrencyView, initial_balance: CurrencyView
+                  ):
         i = 0
 
         def row(view, label):
@@ -29,5 +35,8 @@ class RentArrangementData(ViewableRecord):
         row(start_date, 'First day of rent')
         row(monthly_rent, 'Monthly rent due')
         row(lambda p: agents_fee(p, 0, 100), 'Agent\'s fee (%)')
+        row(base_float, 'Base float')
+        row(initial_float, 'Initial float')
+        row(initial_balance, 'Initial balance')
 
         parent.grid_columnconfigure(1, weight=1)

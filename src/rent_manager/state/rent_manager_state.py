@@ -1,6 +1,5 @@
 import dataclasses
 import itertools
-import logging
 import tkinter as tk
 import typing
 from dataclasses import dataclass, field
@@ -9,6 +8,7 @@ from tkinter import font
 from typing import Callable, Optional, Iterator, Type
 
 import tk_utils
+from currency import format_currency
 from tk_utils import Spacer
 from tk_utils.horizontal_scrolled_group import HorizontalScrolledGroup
 from traits.core import ViewableRecord, partial_record_view, RecordView
@@ -18,6 +18,9 @@ from traits.views import ListView, CurrencyView, DateView
 from .other_transaction import OtherTransaction, TransactionReason, OtherTransactionView
 from .rent_arrangement_data import RentArrangementData
 from .rent_payment import RentPayment
+
+if typing.TYPE_CHECKING:
+    from .rent_calculations import RentCalculations
 
 
 @dataclass
@@ -49,11 +52,12 @@ class RentManagerMainState(ViewableRecord):
         rent_arrangement_data: Optional[RentArrangementData] = None
 
         @set_on_calculations_change
-        def on_calculations_change(calculations: RentCalculations):
+        def on_calculations_change(calculations: 'RentCalculations'):
             nonlocal rent_calculations
             rent_calculations = calculations
             update_other_transaction_buttons()
             arrears.config(text=f'Arrears: £{rent_calculations.arrears / 100:0.2f}')
+            update_float()
 
         @set_on_arrangement_data_change
         def on_arrangement_data_change(arrangement_data: RentArrangementData):
@@ -61,7 +65,20 @@ class RentManagerMainState(ViewableRecord):
             rent_arrangement_data = arrangement_data
             update_rent_payment_buttons()
             update_other_transaction_buttons()
-            print(f'{rent_arrangement_data=}')
+            update_float()
+
+        def update_float():
+            if rent_calculations is None or rent_arrangement_data is None:
+                return
+            if rent_calculations.float_ == rent_arrangement_data.base_float:
+                float_message = 'at base float'
+            elif rent_calculations.float_ < rent_arrangement_data.base_float:
+                float_message = (f'{format_currency(rent_arrangement_data.base_float - rent_calculations.float_)} below'
+                                 ' base float')
+            else:
+                float_message = (f'{format_currency(rent_calculations.float_ - rent_arrangement_data.base_float)} above'
+                                 ' base float')
+            float_.config(text=f'Float: £{rent_calculations.float_ / 100:0.2f} ({float_message})')
 
         def update_rent_payment_buttons():
             pass
@@ -71,12 +88,20 @@ class RentManagerMainState(ViewableRecord):
 
             def add(amount: int, received_on: date, for_month: date) -> None:
                 add_basic(RentPayment(amount, received_on, for_month))
+                agents_fee = int(amount * rent_arrangement_data.agents_fee / 100)
                 add_other_transaction(
                     TransactionReason.AgentFee,
-                    int(amount * rent_arrangement_data.agents_fee / 100),
+                    agents_fee,
                     f'For month {for_month.month:0>2}/{for_month.year}',
                     received_on
                 )
+                if rent_calculations.float_ < rent_arrangement_data.base_float:
+                    add_other_transaction(
+                        TransactionReason.FloatIncrease,
+                        min(amount - agents_fee, rent_arrangement_data.base_float - rent_calculations.float_),
+                        f'Top up float to base level from {for_month.month:0>2}/{for_month.year} rent payment',
+                        received_on
+                    )
 
             frame = tk.Frame(parent)
 
@@ -207,14 +232,14 @@ class RentManagerMainState(ViewableRecord):
                 agent_fee_button.config(command=claim_commission)
 
                 # landlord payment button
-                payment_button = buttons[TransactionReason.Payment]
+                payment_button = buttons[TransactionReason.ToLandlord]
                 payment_button.config(
                     text=f'Pay £{rent_calculations.balance / 100:0.2f} to landlord',
                     font=tk_utils.my_fonts.derived_font('TkDefaultFont', weight=font.BOLD)
                 )
 
                 def pay_landlord():
-                    add(TransactionReason.Payment, rent_calculations.balance, '', date.today())
+                    add(TransactionReason.ToLandlord, rent_calculations.balance, '', date.today())
 
                 payment_button.config(command=pay_landlord)
 
@@ -228,8 +253,14 @@ class RentManagerMainState(ViewableRecord):
             scrolled_transaction = typing.cast(Callable, OtherTransactionScrolled)(**fields)
             return scrolled_transaction.view()
 
-        arrears = tk.Label(parent)
-        arrears.grid(row=0, column=0, sticky=tk.W, columnspan=2)
+        info_bar = tk.Frame(parent)
+        arrears = tk.Label(info_bar)
+        arrears.grid(row=0, column=0, sticky=tk.W)
+        Spacer(info_bar).grid(row=0, column=1)
+        float_ = tk.Label(info_bar)
+        float_.grid(row=0, column=2, sticky=tk.W)
+
+        info_bar.grid(row=0, column=0, sticky=tk.E + tk.W, columnspan=2)
         Spacer(parent, horizontal=True).grid(row=1, column=0, columnspan=2, pady=2)
 
         header(parent, RentPayment).grid(row=2, column=0, sticky=tk_utils.STICKY_ALL)
@@ -274,70 +305,3 @@ class RentManagerMainStateView(RecordView):
 class RentManagerState:
     rent_manager_main_state: RentManagerMainState = field(default_factory=RentManagerMainState)
     rent_arrangement_data: RentArrangementData = field(default_factory=RentArrangementData)
-
-
-@dataclass
-class RentCalculations:
-    rent_for_months: list[tuple[date, int]]
-    unclaimed_commission: int
-    total_rent_due: int
-    total_rent_received: int
-    other_transaction_sums: dict[TransactionReason, int]
-
-    @classmethod
-    def from_rent_manager_state(cls, rent_manager_state: RentManagerState):
-        start_date = rent_manager_state.rent_arrangement_data.start_date
-        months_since_start = date.today().month - start_date.month + 12 * (date.today().year - start_date.year)
-        if date.today().day >= start_date.day:
-            months_since_start += 1
-        rent_for_months = {
-            date(
-                start_date.year + (start_date.month + month - 1) // 12,
-                (start_date.month + month - 1) % 12 + 1,
-                1
-            ): 0
-            for month in range(months_since_start)
-        }
-
-        for rent_payment in rent_manager_state.rent_manager_main_state.rent_payments:
-            try:
-                rent_for_months[rent_payment.for_month] += rent_payment.amount
-            except KeyError:
-                logging.warning(
-                    f'{rent_payment.for_month} is not a month in the rental period {start_date} to {date.today()}'
-                )
-
-        total_rent_received = sum(
-            rent_payment.amount
-            for rent_payment in rent_manager_state.rent_manager_main_state.rent_payments
-        )
-        total_rent_due = months_since_start * rent_manager_state.rent_arrangement_data.monthly_rent
-        total_commission_due = int(total_rent_received * rent_manager_state.rent_arrangement_data.agents_fee / 100)
-        other_transaction_sums = {
-            reason: sum(
-                transaction.amount
-                for transaction in rent_manager_state.rent_manager_main_state.other_transactions
-                if transaction.reason is reason
-            )
-            for reason in TransactionReason
-        }
-
-        return cls(
-            rent_for_months=list(rent_for_months.items()),
-            unclaimed_commission=total_commission_due - other_transaction_sums[TransactionReason.AgentFee],
-            total_rent_due=total_rent_due,
-            total_rent_received=total_rent_received,
-            other_transaction_sums=other_transaction_sums
-        )
-
-    @property
-    def arrears(self):
-        return self.total_rent_due - self.total_rent_received
-
-    @property
-    def balance(self):
-        return self.total_rent_received - self.total_costs
-
-    @property
-    def total_costs(self):
-        return sum(self.other_transaction_sums.values())

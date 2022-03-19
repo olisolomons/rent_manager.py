@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from tkinter import messagebox
 from typing import Generic, TypeVar, Optional, Callable, Any
 
+from tk_utils import ResettableTimer
 from tk_utils.complete_bind import complete_bind
 from tk_utils.vertical_scrolled_frame import VerticalScrolledFrame
 from traits.core import EditableView, ViewWrapper, Action
@@ -380,6 +381,9 @@ class _ListView(Generic[T], EditableView[list[T], ListChangeAction]):
 
         if editing_item:
             self.register_events(item_record)
+
+        self.frame.update_idletasks()
+        self.list_frame.scroll_to_end()
 
         return item
 

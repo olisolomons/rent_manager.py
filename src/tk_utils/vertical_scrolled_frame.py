@@ -14,6 +14,7 @@ class VerticalScrolledFrame(tk.Frame):
         v_scrollbar.pack(fill=tk.Y, side=tk.RIGHT, expand=tk.FALSE)
         canvas = tk.Canvas(self, bd=0, highlightthickness=0,
                            yscrollcommand=v_scrollbar.set)
+        self.canvas = canvas
         canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=tk.TRUE)
         v_scrollbar.config(command=canvas.yview)
 
@@ -49,3 +50,6 @@ class VerticalScrolledFrame(tk.Frame):
 
         interior.bind("<Enter>", lambda event: canvas.bind_all("<MouseWheel>", _on_mousewheel))
         interior.bind("<Leave>", lambda event: canvas.unbind_all("<MouseWheel>"))
+
+    def scroll_to_end(self):
+        self.canvas.yview_moveto(1)

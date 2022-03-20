@@ -3,6 +3,7 @@ import enum
 import logging
 import sys
 import tkinter as tk
+from datetime import date
 from pathlib import Path
 from tkinter import filedialog
 from tkinter import messagebox
@@ -191,7 +192,8 @@ class RentManagerApp(DocumentManager):
             self.calculation_results = RentCalculations.from_rent_manager_state(self.data)
             self.notify_calculations_change(self.calculation_results)
 
-    def filedialog(self, dialog, filetypes=(('RentManager File', '*.rman'),), modify_config_dir=True, parent=None):
+    def filedialog(self, dialog, filetypes=(('RentManager File', '*.rman'),), modify_config_dir=True, parent=None,
+                   **kwargs):
         if parent is None:
             parent = self.frame.winfo_toplevel()
 
@@ -199,7 +201,7 @@ class RentManagerApp(DocumentManager):
         if self.config.file_chooser_dir is not None:
             initial_dir = self.config.file_chooser_dir
 
-        res = dialog(parent=parent, initialdir=initial_dir, filetypes=filetypes)
+        res = dialog(parent=parent, initialdir=initial_dir, filetypes=filetypes, **kwargs)
 
         if res and modify_config_dir:
             self.config = dataclasses.replace(self.config, file_chooser_dir=str(Path(res).parent))
@@ -322,7 +324,15 @@ class RentManagerApp(DocumentManager):
         return parts[releases_index + 1]
 
     def generate_report(self):
-        res = self.filedialog(filedialog.asksaveasfilename, filetypes=[('PDF', '*.pdf')], modify_config_dir=False)
+        if self.file_path is None:
+            filename = 'Report'
+        else:
+            filename = Path(self.file_path).stem
+
+        date_format = '%d%b%Y'
+        filename = f'{filename} {date.today().strftime(date_format)}'
+        res = self.filedialog(filedialog.asksaveasfilename, filetypes=[('PDF', '*.pdf')], modify_config_dir=False,
+                              initialfile=filename)
         if not res:
             return
 
